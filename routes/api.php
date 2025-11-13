@@ -22,9 +22,18 @@ use App\Http\Controllers\Api\FormFieldsData\AirCraftTypesController;
 use App\Http\Controllers\Api\FormFieldsData\CrewRequirementsController;
 use App\Http\Controllers\Api\FormFieldsData\TravelingPurposeController;
 use App\Http\Controllers\Api\FormFieldsData\CateringDietaryController;
+<<<<<<< HEAD
 use App\Http\Controllers\Api\Dashboard\KXManagerController;
 use App\Http\Controllers\Api\Dashboard\TravelAgentController;
 use App\Http\Controllers\Api\InquiryDetails\InquiryDetailsController;
+=======
+use App\Http\Controllers\Api\FormFieldsData\RequiredDocumentOptionController;
+use App\Http\Controllers\Api\Dashboard\KXManagerController;
+use App\Http\Controllers\Api\Dashboard\TravelAgentController;
+use App\Http\Controllers\Api\Dashboard\AircraftOperatorController;
+use App\Http\Controllers\Api\InquiryDetails\InquiryDetailsController;
+use App\Http\Controllers\Api\InquiryOperators\KXManager\InquiryOperatorsController;
+>>>>>>> 683c30d (Initial commit)
 // Public route for user login
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLink']);
@@ -68,6 +77,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('crew-requirements', CrewRequirementsController::class);
         Route::apiResource('travel-purposes', TravelingPurposeController::class);
         Route::apiResource('catering-dietary', CateringDietaryController::class);
+<<<<<<< HEAD
+=======
+        Route::apiResource('required-document-option', RequiredDocumentOptionController::class);
+>>>>>>> 683c30d (Initial commit)
     });
     /** Booking Inquiries Routes */ 
     Route::apiResource('booking-inquiries', BookingInquiriesController::class);
@@ -77,9 +90,19 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/kxmanager-cardcount', [KXManagerController::class, 'cardCount']);
         Route::get('/kxmanager-activitytimeline', [KXManagerController::class, 'getActivityTimeline']);
         Route::get('/kxmanager-prioritytask', [KXManagerController::class, 'getPriorityTask']);
+<<<<<<< HEAD
 
         Route::get('/travelagent-cardcount', [TravelAgentController::class, 'cardCount']);
         Route::get('/travelagent-charter-inquiries', [TravelAgentController::class, 'getCharterInquiries']);
+=======
+        Route::get('/kxmanager-charter-inquiries', [KXManagerController::class, 'getCharterInquiries']);
+
+        Route::get('/travelagent-cardcount', [TravelAgentController::class, 'cardCount']);
+        Route::get('/travelagent-charter-inquiries', [TravelAgentController::class, 'getCharterInquiries']);
+
+        Route::get('/aircraft-operator-cardcount', [AircraftOperatorController::class, 'cardCount']);
+        Route::get('/aircraft-operator-charter-inquiries', [AircraftOperatorController::class, 'getCharterInquiries']);
+>>>>>>> 683c30d (Initial commit)
     });
 
     /**Inquiry Details Routes */
@@ -87,6 +110,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/get-details/{id}', [InquiryDetailsController::class, 'index']);
     });
 
+<<<<<<< HEAD
+=======
+    /**Inquiry Details Operator Routes */
+    Route::prefix('inquiry-operator')->group(function () {
+        Route::post('/get-operators', [InquiryOperatorsController::class, 'getOperators']);
+        Route::get('/get-assigned-operators', [InquiryOperatorsController::class, 'getAssignedOperators']);
+        Route::post('/operators-assign', [InquiryOperatorsController::class, 'assignOperators']);
+        Route::delete('/operators-remove/{id}', [InquiryOperatorsController::class, 'removeOperator']);        
+    });
+
+>>>>>>> 683c30d (Initial commit)
 });
 
 

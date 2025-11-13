@@ -10,6 +10,7 @@ use App\Models\FormFieldsData\AirCraftTypes;
 use App\Models\Client;
 use App\Models\FormFieldsData\AirportCities;
 use App\Models\BookingStatus;
+use App\Models\BookingInquiries\BookingInquiriesStatuses;
 
 class BookingInquiriesController extends Controller
 {
@@ -130,11 +131,11 @@ class BookingInquiriesController extends Controller
      * Create a new booking inquiry (with children)
      */
     public function store(Request $request)
-    {
-        //return response()->json(['status' => false, 'message' => 'Booking inquiry created successfully', 'data' => json_encode($request->input('passengerInfo.crew_requirements.services'))], 500);
+    {        
        DB::beginTransaction();
         try {
-            $data['user_id'] = auth()->user()->id;
+            $payload = json_decode($request->input('payload'), true);
+            $data['requester_id'] = auth()->user()->id;
             $data['client_id'] = auth()->user()->client_id;
             $data['booking_reference'] = 'BQ-REF-' . str_pad(BookingInquiries::max('id') + 1, 5, '0', STR_PAD_LEFT);
             $data['is_confirmed'] = 0;
@@ -142,34 +143,45 @@ class BookingInquiriesController extends Controller
             $data['remarks'] = '';
             $data['booking_date'] = date('Y-m-d H:i:s');
 
-            $data['trip_type'] = $request->input('flightDetails.trip_type');
-            $data['is_flexible_dates'] = $request->input('flightDetails.is_flexible_dates');
-            $data['flexible_range'] = $request->input('flightDetails.flexible_range');
+            $data['trip_type'] = $payload['flightDetails']['trip_type'] ?? '';
+            $data['is_flexible_dates'] = $payload['flightDetails']['is_flexible_dates'] ?? '';
+            $data['flexible_range'] = $payload['flightDetails']['flexible_range'] ?? '';
 
-            $data['passanger_info_adults'] = $request->input('passengerInfo.passanger_info_adults');
-            $data['passanger_info_children'] = $request->input('passengerInfo.passanger_info_children');
-            $data['passanger_info_infants'] = $request->input('passengerInfo.passanger_info_infants');
-            $data['passenger_info_total'] = $request->input('passengerInfo.passenger_info_total');
+            $data['passanger_info_adults'] = $payload['passengerInfo']['passanger_info_adults'] ?? '';
+            $data['passanger_info_children'] = $payload['passengerInfo']['passanger_info_children'] ?? '';
+            $data['passanger_info_infants'] = $payload['passengerInfo']['passanger_info_infants'] ?? '';
+            $data['passenger_info_total'] = $payload['passengerInfo']['passenger_info_total'] ?? '';
 
-            $data['checked_bag'] = $request->input('passengerInfo.checked_bag');  
-            $data['carry_bag'] = $request->input('passengerInfo.carry_bag');
-            $data['oversized_item'] = $request->input('passengerInfo.oversized_items');
+            $data['checked_bag'] = $payload['passengerInfo']['checked_bag'] ?? '';  
+            $data['carry_bag'] = $payload['passengerInfo']['carry_bag'] ?? '';
+            $data['oversized_item'] = $payload['passengerInfo']['oversized_items'] ?? '';
 
-            $data['is_traveling_pets'] = $request->input('passengerInfo.is_traveling_pets');
-            $data['is_medical_assistance_req'] = $request->input('passengerInfo.is_medical_assistance_req');
+            $data['is_traveling_pets'] = $payload['passengerInfo']['is_traveling_pets'] ?? '';
+            $data['is_medical_assistance_req'] = $payload['passengerInfo']['is_medical_assistance_req'] ?? '';
             
-            $data['travel_purpose_id'] = $request->input('passengerInfo.travel_purpose_id');
-            $data['other_travel_purpose'] = $request->input('passengerInfo.other_travel_purpose');
+            $data['travel_purpose_id'] = $payload['passengerInfo']['travel_purpose_id'] ?? '';
+            $data['other_travel_purpose'] = '';//$payload['passengerInfo']['other_travel_purpose'] ?? '';
 
-            $data['is_catering_service_req'] = $request->input('passengerInfo.is_catering_service_req');        
-           // dd($data);
-        //  return response()->json(['status' => false, 'message' => 'Booking inquiry created successfully', 'data' => $data, 'error' => $request->input('flightDetails.trip_type')], 500);
+            $data['is_catering_service_req'] = $payload['passengerInfo']['is_catering_service_req'] ?? '';        
+          
+        //  return response()->json(['status' => false, 'message' => 'Booking inquiry created successfully', 'data' => $data, 'error' => $payload->input('flightDetails.trip_type')], 500);
         //    try {
             $booking = BookingInquiries::create($data);
 
             // Save relations
             $this->saveRelations($booking, $request);
-
+            if($booking->loadRelations()){
+                $user = auth()->user()->client_id;
+                $forUser = [$user, 1];
+                $byStatus = [2, 3];
+                foreach ($forUser as $key => $usr) {
+                    BookingInquiriesStatuses::create([
+                        'booking_inquiries_id' => $booking->id,
+                        'status_id' => $byStatus[$key], //Requested
+                        'user_client_id' => $usr,
+                    ]);
+                }
+            }
             DB::commit();
             return response()->json(['status' => true, 'message' => 'Booking inquiry created successfully', 'data' => $booking->loadRelations()], 201);
 
@@ -242,67 +254,75 @@ class BookingInquiriesController extends Controller
      */
     private function saveRelations(BookingInquiries $booking, Request $request)
     {
-        
-        if ($request->has('flightDetails')) {
-            foreach ($request->input('flightDetails.departure_location') as $index => $departure_location) {
+        $reqParam = $request;
+        $payload = json_decode($request->input('payload'), true); 
+        $request->merge(['payload' => $payload]);
+        if ($request->has('payload.flightDetails')) {
+            foreach ($request->input('payload.flightDetails.departure_location') as $index => $departure_location) {
                 $flight_details['booking_inquiries_id'] = $booking->id;
                 $flight_details['departure_location'] = $departure_location['id'];
-                $flight_details['arrival_location'] = $request->input('flightDetails.arrival_location')[$index]['id'];
-                $flight_details['departure_time'] = date('Y-m-d H:i:s', strtotime($request->input('flightDetails.departure_time')[$index]));
-                if(count($request->input('flightDetails.departure_location')) > 1 && count($request->input('flightDetails.departure_location')) === $index + 1){
-                    $flight_details['return_date_time'] = date('Y-m-d H:i:s', strtotime($request->input('flightDetails.departure_time')[$index]));
+                $flight_details['arrival_location'] = $request->input('payload.flightDetails.arrival_location')[$index]['id'];
+                $flight_details['departure_time'] = date('Y-m-d H:i:s', strtotime($request->input('payload.flightDetails.departure_time')[$index]));
+                if(count($request->input('payload.flightDetails.departure_location')) > 1 && count($request->input('payload.flightDetails.departure_location')) === $index + 1){
+                    $flight_details['return_date_time'] = date('Y-m-d H:i:s', strtotime($request->input('payload.flightDetails.departure_time')[$index]));
                 }
                 $booking->flightDetails()->create($flight_details);
             }
         }
 
-        if ($request->has('passengerInfo') && $request->input('passengerInfo.is_traveling_pets') === true) {
-            $booking->petTravels()->create($request->input('passengerInfo.pet_travels'));
+        if ($request->has('payload.passengerInfo') && $request->input('payload.passengerInfo.is_traveling_pets') === true) {
+            $booking->petTravels()->create($request->input('payload.passengerInfo.pet_travels'));
         }
         
-        if ($request->has('passengerInfo') && $request->input('passengerInfo.is_medical_assistance_req') === true) {
-            foreach ($request->input('passengerInfo.medical_assistance')['medical_assist_id'] as $assistanceId) {
+        if ($request->has('payload.passengerInfo') && $request->input('payload.passengerInfo.is_medical_assistance_req') === true) {
+            foreach ($request->input('payload.passengerInfo.medical_assistance')['medical_assist_id'] as $assistanceId) {
                 $medicalAssistance['booking_inquiries_id'] = $booking->id;
                 $medicalAssistance['medical_assist_id'] = $assistanceId;
                 if($assistanceId === 6){
-                    $medicalAssistance['other_requirements'] = $request->input('passengerInfo.medical_assistance.other_requirements');
+                    $medicalAssistance['other_requirements'] = $request->input('payload.passengerInfo.medical_assistance.other_requirements');
                 }
 
                 $booking->medicalAssistance()->create($medicalAssistance);
             }
         }
 
-        if ($request->has('passengerInfo.aircraft_preference')) {
-            foreach ($request->input('passengerInfo.aircraft_preference') as $aircraft_preference) {
+        if ($request->has('payload.passengerInfo.aircraft_preference')) {
+            foreach ($request->input('payload.passengerInfo.aircraft_preference') as $aircraft_preference) {
                 $aircrafpreference['booking_inquiries_id'] = $booking->id;
                 $aircrafpreference['aircraft_type_id'] = $aircraft_preference;
                 $booking->aircraftPreference()->create($aircrafpreference);
             }
         }
 
-        if ($request->has('passengerInfo.crew_requirements')) {
+        if ($request->has('payload.passengerInfo.crew_requirements')) {
             $crew_requirements['booking_inquiries_id'] = $booking->id;
-            $crew_requirements['additional_notes'] = $request->input('passengerInfo.crew_requirements')['additional_notes'];
-            $crew_requirements['crew_req_id'] = json_encode($request->input('passengerInfo.crew_requirements.services'));
+            $crew_requirements['additional_notes'] = $request->input('payload.passengerInfo.crew_requirements')['additional_notes'];
+            $crew_requirements['crew_req_id'] = json_encode($request->input('payload.passengerInfo.crew_requirements.services'));
             $booking->crewRequirements()->create($crew_requirements);
         }
 
         
-        if ($request->has('passengerInfo.catering_services') && $request->input('passengerInfo.is_catering_service_req') === true) {
+        if ($request->has('payload.passengerInfo.catering_services') && $request->input('payload.passengerInfo.is_catering_service_req') === true) {
             $catering_services['booking_inquiries_id'] = $booking->id;
-            $catering_services['dietary_required'] = json_encode($request->input('passengerInfo.catering_services.dietary_required'));
-            $catering_services['allergy_notes'] = $request->input('passengerInfo.catering_services.allergy_notes');
-            $catering_services['drink_preferences'] = $request->input('passengerInfo.catering_services.drink_preferences');
-            $catering_services['custom_services'] = $request->input('passengerInfo.catering_services.custom_services');
+            $catering_services['dietary_required'] = json_encode($request->input('payload.passengerInfo.catering_services.dietary_required'));
+            $catering_services['allergy_notes'] = $request->input('payload.passengerInfo.catering_services.allergy_notes');
+            $catering_services['drink_preferences'] = $request->input('payload.passengerInfo.catering_services.drink_preferences');
+            $catering_services['custom_services'] = $request->input('payload.passengerInfo.catering_services.custom_services');
             $booking->cateringServices()->create($catering_services);
         }
 
-        if ($request->has('documents')) {
-            $booking->documents()->createMany($request->input('documents'));
+        if ($reqParam->has('documents')) {
+            $filesPath = $this->uploadDocFiles($reqParam);            
+            foreach($filesPath as $path){                
+                $docData['booking_inquiries_id '] = $booking->id;
+                $docData['document_type'] = json_encode($request->input('payload.documentName'));
+                $docData['document_path'] = $path;
+                $booking->documents()->create($docData);
+            }
         }
 
-        if ($request->has('contactInfo') && $request->input('contactInfo.contact_information') !== null) {
-            $booking->contactInformation()->create($request->input('contactInfo.contact_information'));
+        if ($request->has('payload.contactInfo') && $request->input('payload.contactInfo.contact_information') !== null) {
+            $booking->contactInformation()->create($request->input('payload.contactInfo.contact_information'));
         }      
 
        
@@ -314,5 +334,24 @@ class BookingInquiriesController extends Controller
         // }
         
        
+    }
+
+    public function uploadDocFiles($request){
+        
+        try {
+            $images = $request->file('documents');
+            $images = is_array($images) ? $images : ($images ? [$images] : []);
+            $imagePaths = [];
+            foreach ($images as $image) {
+                $imageName = time() . '.' . $image->getClientOriginalExtension();
+                $imagePath = $image->storeAs('bookingInquiryDocuments', $imageName, 'public'); 
+                $imagePaths[] = $imagePath;
+            }
+            
+            return $imagePaths;
+
+        } catch (Exception $e) {
+            return [];
+        }
     }
 }

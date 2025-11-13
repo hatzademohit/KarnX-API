@@ -10,33 +10,37 @@ use App\Models\Client;
 use App\Models\FormFieldsData\AirportCities;
 use App\Models\BookingStatus;
 use Auth;
-class TravelAgentController extends Controller
+class AircraftOperatorController extends Controller
 {
     public function cardCount()
     { 
         return response()->json([
             'success' => true,
             'data' => [
-                'this_month_mybooking' => BookingInquiries::Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')
-                ->Join('booking_status as b', 'b.id', '=', 'a.status_id')
-                ->where(['booking_inquiries.requester_id' => Auth::user()->id, 'a.is_active' => 1])->whereMonth('booking_inquiries.created_at', now()->month)->whereIn('b.id', [11,12,13,14])->count(),
+                'assigned_inquiries' => BookingInquiries::Join('booking_inquiry_operator_assignments as c', 'c.booking_inquiries_id', '=', 'booking_inquiries.id')
+                        ->Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')
+                        ->where('a.is_active', 1)->whereIn('a.status_id', [4])->where('a.user_client_id', Auth::user()->client_id)
+                        ->where('c.operator_id', Auth::user()->client_id)->count(),
 
-                'my_booking_active_clients' => 0,
+                'quote_pending' => BookingInquiries::Join('booking_inquiry_operator_assignments as c', 'c.booking_inquiries_id', '=', 'booking_inquiries.id')
+                        ->Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')
+                        ->where('a.is_active', 1)->whereIn('a.status_id', [5])->where('a.user_client_id', Auth::user()->client_id)
+                        ->where('c.operator_id', Auth::user()->client_id)->count(),
 
-                'total_inquiries_this_month' => BookingInquiries::Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')
-                ->Join('booking_status as b', 'b.id', '=', 'a.status_id')
-                ->where(['booking_inquiries.requester_id' => Auth::user()->id, 'a.is_active' => 1])->whereMonth('booking_inquiries.created_at', now()->month)->whereIn('b.id', [2])->count(),
+                'upcoming_flights' => BookingInquiries::Join('booking_inquiry_operator_assignments as c', 'c.booking_inquiries_id', '=', 'booking_inquiries.id')
+                        ->Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')
+                        ->where('a.is_active', 1)->whereIn('a.status_id', [12])->where('a.user_client_id', Auth::user()->client_id)
+                        ->where('c.operator_id', Auth::user()->client_id)->count(),
 
-                'inquiry_pending_this_month' => BookingInquiries::Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')
-                ->Join('booking_status as b', 'b.id', '=', 'a.status_id')
-                ->where(['booking_inquiries.requester_id' => Auth::user()->id, 'a.is_active' => 1])->whereMonth('booking_inquiries.created_at', now()->month)->whereNotIn('b.id', [2,3,4,5,6])->count(),
+                'live_flights' => BookingInquiries::Join('booking_inquiry_operator_assignments as c', 'c.booking_inquiries_id', '=', 'booking_inquiries.id')
+                        ->Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')
+                        ->where('a.is_active', 1)->whereIn('a.status_id', [13])->where('a.user_client_id', Auth::user()->client_id)
+                        ->where('c.operator_id', Auth::user()->client_id)->count(),
 
-                'confirmed_booking_this_week' => BookingInquiries::Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')
-                ->Join('booking_status as b', 'b.id', '=', 'a.status_id')
-                ->whereBetween('a.created_at', [now()->startOfWeek(), now()->endOfWeek()])
-                ->where(['booking_inquiries.requester_id' => Auth::user()->id, 'a.is_active' => 1])->whereMonth('booking_inquiries.created_at', now()->month)->whereIn('b.id', [11])->count(),
-
-                'earning' => 0,
+                'completed_bookings' => BookingInquiries::Join('booking_inquiry_operator_assignments as c', 'c.booking_inquiries_id', '=', 'booking_inquiries.id')
+                        ->Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')
+                        ->where('a.is_active', 1)->whereIn('a.status_id', [14,15])->where('a.user_client_id', Auth::user()->client_id)
+                        ->where('c.operator_id', Auth::user()->client_id)->count(),
             ],
         ]);
     }   
@@ -59,15 +63,15 @@ class TravelAgentController extends Controller
             $join->on('ps.booking_inquiries_id', '=', 'booking_inquiries.id'); 
         })
         ->leftJoin('booking_status as b', 'b.id', '=', 'ps.status_id') 
-        ->leftJoin('clients as c', 'c.id', '=', 'booking_inquiries.manager_id') 
-        ->select('booking_inquiries.*', 'b.status_name', 'b.color_code', 'c.name as operator') 
-        ->where('booking_inquiries.requester_id', Auth::user()->id);
+        ->Join('booking_inquiry_operator_assignments as c', 'c.booking_inquiries_id', '=', 'booking_inquiries.id') 
+        ->select('booking_inquiries.*', 'b.status_name', 'b.color_code') 
+        ->where('c.operator_id', Auth::user()->client_id);
 
-        if ($request->has('client_id')) {
-            $query->where('booking_inquiries.client_id', $request->client_id);
-        }
+        // if ($request->has('client_id')) {
+        //     $query->where('booking_inquiries.client_id', $request->client_id);
+        // }
         
-        $query->where('booking_inquiries.requester_id', Auth::user()->id);
+        //$query->where('booking_inquiries.requester_id', Auth::user()->id);
 
         if ($request->has('search')) {
             $query->where('booking_inquiries.booking_reference', 'like', '%' . $request->search . '%');
@@ -124,7 +128,6 @@ class TravelAgentController extends Controller
                 'aircraft' => $aircraftType,
                 'status' => $status,
                 'status_color' => $status_color,
-                'operators' => $item->operator,
                 'value' => 'val',
             ];
         })->toArray();

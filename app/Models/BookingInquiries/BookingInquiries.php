@@ -9,7 +9,7 @@ class BookingInquiries extends Model
     use BaseModelLoggingTrait;
     protected $table = 'booking_inquiries'; // explicitly set table name
     protected $fillable = [
-        'client_id', 'user_id', 'booking_reference',
+        'client_id', 'requester_id', 'booking_reference',
         'booking_date', 'status_id', 'remarks', 'is_confirmed', 'trip_type',
         'is_flexible_dates', 'flexible_range', 'passanger_info_adults',
         'passanger_info_children', 'passanger_info_infants', 'passenger_info_total', 'is_traveling_pets',
