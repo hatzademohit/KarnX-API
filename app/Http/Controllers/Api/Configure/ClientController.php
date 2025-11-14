@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\Configure;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Client;
+use App\Models\FormFieldsData\AirportCities;
+use App\Models\Asset;
 
 class ClientController extends Controller
 {
@@ -33,10 +35,17 @@ class ClientController extends Controller
     {
         try {
             $client = Client::find($id);
+            $regionCities = AirportCities::where(['is_active' => 1, 'country_name' => 'India']) ->select('id','city_name','country_name')->get();
+            $data['client'] = $client;
+            $data['regionCities'] = $regionCities;
+            $data['totalAircraft'] = Asset::where(['client_id' => $client->id, 'is_active' => 1])->count();
+            $data['rating'] = 4;
+            $data['totalFlights'] = 2847;
+
             if (!$client) {
                 return response()->json(['status' => false, 'message' => 'Client not found'], 404);
             }
-            return response()->json(['status' => true, 'message' => 'Client get successfully', 'data' => $client], 200);
+            return response()->json(['status' => true, 'message' => 'Client get successfully', 'data' => $data], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
@@ -63,6 +72,11 @@ class ClientController extends Controller
                 'state' => 'required|string|max:100',
                 'pincode' => 'required|string|max:20',
                 'country' => 'required|string|max:100',
+                'website' => 'nullable|string|max:255',
+                'safety_ratings' => 'nullable|number|max:255',
+                'operating_reginons' => 'nullable|string|max:255',
+                'certifications' => 'nullable|string|max:255',
+                'specialties' => 'nullable|string|max:255',                
             ]);
             $validated['is_active'] = true;
             $client = Client::create($validated);
@@ -95,6 +109,11 @@ class ClientController extends Controller
                 'state' => 'nullable|string|max:100',
                 'pincode' => 'nullable|string|max:20',
                 'country' => 'nullable|string|max:100',
+                'website' => 'nullable|string|max:255',
+                'safety_ratings' => 'nullable|number|max:255',
+                'operating_reginons' => 'nullable|string|max:255',
+                'certifications' => 'nullable|string|max:255',
+                'specialties' => 'nullable|string|max:255',
                 'is_active' => 'boolean'
             ]);
 
