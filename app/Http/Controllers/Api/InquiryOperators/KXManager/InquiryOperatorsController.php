@@ -38,79 +38,35 @@ class InquiryOperatorsController extends Controller
         return response()->json(['status' => true, 'data' => $request->all(), 'message' => 'Operators deleted successfully'], 200);
     }
     public function getAssignedOperators(Request $request){
+        //return response()->json(['status' => false, 'data' => $request->all(), 'message' => 'Operators']);
+        $operator = [];
+        if(!empty($request->inquiry_id) && $request->selected > 0){
         $operator = [
             [
-            'id' => 1,
-            'name' => 'Elite Aviation Services ggg',
-            'rating' => 4.9,
-            'flights' => 2847,
-            'safety_rating' => 'ARGUS Gold',
-            'response_time' => '< 2 hours',
-            'fleet_overview' => [
-                'total_aircraft' => 6,
-                'aircraft_types' => [
-                    ['type' => 'Light', 'count' => 1],
-                    ['type' => 'Mid-Size', 'count' => 2]
-                ]
-            ],
-            'operating_regions' => ['Delhi', 'Mumbai', 'Pune'],
-            'certifications' => ['IS-BAO', 'Wyvern Wingman', 'ARGUS Gold'],
-            'contact_methods' => [
-                'email' => true,
-                'call' => true,
-                'website' => true
-            ],
-            'specialties' => ['IS-BAO', 'Wyvern Wingman', 'ARGUS Gold']
-        ],
-        [
-            'id' => 2,
-            'name' => 'Elite Aviation Services 2',
-            'rating' => 4.9,
-            'flights' => 2847,
-            'safety_rating' => 'ARGUS Gold',
-            'response_time' => '< 2 hours',
-            'fleet_overview' => [
-                'total_aircraft' => 6,
-                'aircraft_types' => [
-                    ['type' => 'Light', 'count' => 1],
-                    ['type' => 'Mid-Size', 'count' => 2]
-                ]
-            ],
-            'operating_regions' => ['Delhi', 'Mumbai', 'Pune'],
-            'certifications' => ['IS-BAO', 'Wyvern Wingman', 'ARGUS Gold'],
-            'contact_methods' => [
-                'email' => true,
-                'call' => true,
-                'website' => true
-            ],
-            'specialties' => ['IS-BAO', 'Wyvern Wingman', 'ARGUS Gold']
-        ],
-
-        [        
-            'id' => 3,
-            'name' => 'Elite Aviation Services 3',
-            'rating' => 4.9,
-            'flights' => 2847,
-            'safety_rating' => 'ARGUS Gold',
-            'response_time' => '< 2 hours',
-            'fleet_overview' => [
-                'total_aircraft' => 6,
-                'aircraft_types' => [
-                    ['type' => 'Light', 'count' => 1],
-                    ['type' => 'Mid-Size', 'count' => 2]
-                ]
-            ],
-            'operating_regions' => ['Delhi', 'Mumbai', 'Pune'],
-            'certifications' => ['IS-BAO', 'Wyvern Wingman', 'ARGUS Gold'],
-            'contact_methods' => [
-                'email' => true,
-                'call' => true,
-                'website' => true
-            ],
-            'specialties' => ['IS-BAO', 'Wyvern Wingman', 'ARGUS Gold']
-        ]
-    ];
-
+                'id' => 1,
+                'name' => 'Elite Aviation Services ggg',
+                'rating' => 4.9,
+                'flights' => 2847,
+                'safety_rating' => 'ARGUS Gold',
+                'response_time' => '< 2 hours',
+                'fleet_overview' => [
+                    'total_aircraft' => 6,
+                    'aircraft_types' => [
+                        ['type' => 'Light', 'count' => 1],
+                        ['type' => 'Mid-Size', 'count' => 2]
+                    ]
+                ],
+                'operating_regions' => ['Delhi', 'Mumbai', 'Pune'],
+                'certifications' => ['IS-BAO', 'Wyvern Wingman', 'ARGUS Gold'],
+                'contact_methods' => [
+                    'email' => true,
+                    'call' => true,
+                    'website' => true
+                ],
+                'specialties' => ['IS-BAO', 'Wyvern Wingman', 'ARGUS Gold']
+            ]
+        ];
+    }
         return response()->json(['status' => true, 'data' => $operator, 'message' => 'Operators fetched successfully'], 200);
     }
 }

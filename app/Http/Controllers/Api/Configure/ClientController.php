@@ -90,12 +90,15 @@ class ClientController extends Controller
     // PUT update client
     public function update(Request $request, $id)
     {
+        
         try {
             $client = Client::find($id);
+            
             if (!$client) {
                 return response()->json(['message' => 'Client not found'], 404);
             }
-
+            
+            
             $validated = $request->validate([
                 'name' => 'sometimes|string|max:100',
                 'type' => 'sometimes|string',
@@ -110,15 +113,15 @@ class ClientController extends Controller
                 'pincode' => 'nullable|string|max:20',
                 'country' => 'nullable|string|max:100',
                 'website' => 'nullable|string|max:255',
-                'safety_ratings' => 'nullable|number|max:255',
-                'operating_reginons' => 'nullable|string|max:255',
+                'safety_ratings' => 'nullable|string|max:255',
+                'operating_reginons' => 'nullable|array|max:255',
                 'certifications' => 'nullable|string|max:255',
                 'specialties' => 'nullable|string|max:255',
                 'is_active' => 'boolean'
             ]);
-
+            $validated['operating_reginons'] = implode(',', array_unique($validated['operating_reginons']));
             $client->update($validated);
-
+            
             return response()->json(['status' => true, 'message' => 'Client updated successfully', 'data' => $client], 200);
         } catch (\Throwable $th) {
             return response()->json(['status' => false, 'message' => $th->getMessage()], 422);

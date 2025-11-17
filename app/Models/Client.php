@@ -23,6 +23,11 @@ class Client extends Model
         'state',
         'pincode',
         'country',
+        'website',
+        'safety_ratings',
+        'operating_reginons',
+        'certifications',
+        'specialties',
         'is_active',
     ];
 }
