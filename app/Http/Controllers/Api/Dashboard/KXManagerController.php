@@ -85,28 +85,41 @@ class KXManagerController extends Controller
     public function getCharterInquiries(Request $request)
     {
         // Fetch inquiry data dynamically with relations
-        $sub = \DB::table('booking_inquiry_process_statuses as a') ->select('a.booking_inquiries_id', 'a.status_id') ->where('a.is_active', 1) ->where('a.user_client_id', Auth::user()->client_id);
+        $latestPerBooking = \DB::table('booking_inquiry_process_statuses as a')
+        ->join(
+        \DB::raw('(
+            SELECT booking_inquiries_id, MAX(id) AS max_id
+            FROM booking_inquiry_process_statuses
+            WHERE is_active = 1 AND user_client_id = ' . (int) Auth::user()->client_id . '
+            GROUP BY booking_inquiries_id
+        ) latest'),
+        function ($join) {
+            $join->on('latest.max_id', '=', 'a.id');
+        }
+        )
+        ->select('a.booking_inquiries_id', 'a.status_id');
+
         $query = BookingInquiries::with([
-            'flightDetails',
-            'aircraftPreference',
-            'contactInformation',
-            'cateringServices',
-            'crewRequirements',
-            'medicalAssistance',
-            'petTravels',
-            'documents',
-        ]) 
-        ->leftJoinSub($sub, 'ps', function ($join) { 
-            $join->on('ps.booking_inquiries_id', '=', 'booking_inquiries.id'); 
-        })
-        ->leftJoin('booking_status as b', 'b.id', '=', 'ps.status_id') 
-        ->leftJoin('clients as c', 'c.id', '=', 'booking_inquiries.manager_id') 
-        ->select('booking_inquiries.*', 'b.status_name', 'b.color_code', 'c.name as operator');
+                'flightDetails',
+                'aircraftPreference',
+                'contactInformation',
+                'cateringServices',
+                'crewRequirements',
+                'medicalAssistance',
+                'petTravels',
+                'documents',
+            ])
+            ->leftJoinSub($latestPerBooking, 'ps', function ($join) {
+                $join->on('ps.booking_inquiries_id', '=', 'booking_inquiries.id');
+            })
+            ->leftJoin('booking_status as b', 'b.id', '=', 'ps.status_id')
+            ->leftJoin('clients as c', 'c.id', '=', 'booking_inquiries.manager_id')
+            ->select('booking_inquiries.*', 'b.status_name', 'b.color_code', 'c.name as operator');
 
         if ($request->has('client_id')) {
             //$query->where('booking_inquiries.client_id', $request->client_id);
         }
-        
+
         if ($request->has('search')) {
             $query->where('booking_inquiries.booking_reference', 'like', '%' . $request->search . '%');
         }
@@ -163,7 +176,7 @@ class KXManagerController extends Controller
                 'status' => $status,
                 'status_color' => $status_color,
                 'operators' => $item->operator,
-                'value' => 'val',
+                'value' => '0',
             ];
         })->toArray();
         return response()->json(['status' => true, 'data' => $inquiries, 'message' => 'Booking inquiries retrieved successfully']);

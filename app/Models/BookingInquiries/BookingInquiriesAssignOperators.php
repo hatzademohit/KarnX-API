@@ -4,6 +4,7 @@ namespace App\Models\BookingInquiries;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\BaseModelLoggingTrait;
+use App\Models\Client;
 
 class BookingInquiriesAssignOperators extends Model
 {
@@ -12,4 +13,9 @@ class BookingInquiriesAssignOperators extends Model
     protected $fillable = [
         'booking_inquiries_id', 'manager_id', 'operator_id'
     ];
+
+    public function client()
+    {
+        return $this->belongsTo(client::class, 'operator_id');
+    }
 }

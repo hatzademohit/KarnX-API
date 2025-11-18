@@ -35,7 +35,7 @@ class ClientController extends Controller
     {
         try {
             $client = Client::find($id);
-            $regionCities = AirportCities::where(['is_active' => 1, 'country_name' => 'India']) ->select('id','city_name','country_name')->get();
+            $regionCities = AirportCities::where(['is_active' => 1, 'country_name' => 'India']) ->select('id','city_name as title','country_name')->get();
             $data['client'] = $client;
             $data['regionCities'] = $regionCities;
             $data['totalAircraft'] = Asset::where(['client_id' => $client->id, 'is_active' => 1])->count();

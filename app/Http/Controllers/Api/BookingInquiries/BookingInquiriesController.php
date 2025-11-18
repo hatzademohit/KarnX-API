@@ -172,7 +172,8 @@ class BookingInquiriesController extends Controller
             $this->saveRelations($booking, $request);
             if($booking->loadRelations()){
                 $user = auth()->user()->client_id;
-                $forUser = [$user, 1];
+                $defaultClient = getDefualtClient();
+                $forUser = [$user, $defaultClient];
                 $byStatus = [2, 3];
                 foreach ($forUser as $key => $usr) {
                     BookingInquiriesStatuses::create([

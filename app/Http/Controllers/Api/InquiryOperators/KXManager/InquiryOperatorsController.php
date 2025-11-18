@@ -6,6 +6,9 @@ use DB;
 use Auth;
 use App\Models\Client;
 use App\Models\Asset;
+use App\Models\BookingInquiries\BookingInquiriesAssignOperators;
+use App\Models\FormFieldsData\AirportCities;
+use App\Models\BookingInquiries\BookingInquiriesStatuses;
 
 class InquiryOperatorsController extends Controller
 {
@@ -30,44 +33,82 @@ class InquiryOperatorsController extends Controller
     }
 
     public function assignOperators(Request $request){
-        
-        return response()->json(['status' => true, 'data' => $request->all(), 'message' => 'Operators added successfully'], 200);
+        try {
+            
+            if (!empty($request->inquiry_id) && $request->operator_ids > 0){
+                foreach ($request->operator_ids as $operator_id) {
+                    BookingInquiriesAssignOperators::create(['booking_inquiries_id' => $request->inquiry_id, 'manager_id' => Auth::user()->id, 'operator_id' => $operator_id]);
+                    setInquiryStatuses($request->inquiry_id, [4,4], [Auth::user()->client_id, $operator_id]);                                        
+                }
+                return response()->json(['status' => true, 'message' => 'Operators assigned successfully'], 200);
+            } else {
+                return response()->json(['status' => false, 'message' => 'No operators selected or inquiry ID not provided'], 400);
+            }
+        } catch (Error $e) {
+           return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
+        }
+       
     }
 
-    public function removeOperator(Request $request){
-        return response()->json(['status' => true, 'data' => $request->all(), 'message' => 'Operators deleted successfully'], 200);
+    public function removeOperator(Request $request, $id){
+        try {
+          BookingInquiriesAssignOperators::find($id)->delete();
+          return response()->json(['status' => true, 'message' => 'Operator removed successfully'], 200);
+        } catch (\Throwable $th) {
+            //throw $th;
+            return response()->json(['status' => false, 'message' => $th->getMessage()], 500);
+        }
     }
     public function getAssignedOperators(Request $request){
-        //return response()->json(['status' => false, 'data' => $request->all(), 'message' => 'Operators']);
-        $operator = [];
-        if(!empty($request->inquiry_id) && $request->selected > 0){
-        $operator = [
-            [
-                'id' => 1,
-                'name' => 'Elite Aviation Services ggg',
-                'rating' => 4.9,
-                'flights' => 2847,
-                'safety_rating' => 'ARGUS Gold',
-                'response_time' => '< 2 hours',
-                'fleet_overview' => [
-                    'total_aircraft' => 6,
-                    'aircraft_types' => [
-                        ['type' => 'Light', 'count' => 1],
-                        ['type' => 'Mid-Size', 'count' => 2]
-                    ]
-                ],
-                'operating_regions' => ['Delhi', 'Mumbai', 'Pune'],
-                'certifications' => ['IS-BAO', 'Wyvern Wingman', 'ARGUS Gold'],
-                'contact_methods' => [
-                    'email' => true,
-                    'call' => true,
-                    'website' => true
-                ],
-                'specialties' => ['IS-BAO', 'Wyvern Wingman', 'ARGUS Gold']
-            ]
-        ];
-    }
-        return response()->json(['status' => true, 'data' => $operator, 'message' => 'Operators fetched successfully'], 200);
+        $operators = [];
+        if(!empty($request->inquiry_id)){
+        
+            $assignments = BookingInquiriesAssignOperators::with([
+                'client',
+                'client.assets',
+                'client.assets.aircraftType'
+            ])
+            ->where('booking_inquiries_id', $request->inquiry_id)
+            ->get();
+        
+            $operators = $assignments->map(function ($item) {
+
+                $client = $item->client;
+                $cityIds = explode(',', $client->operating_reginons);
+                $cities = AirportCities::whereIn('id', $cityIds)->pluck('city_name');
+                
+                $aircraftTypes = $client->assets->groupBy('aircraft_type_id')->map(function ($groups) {               
+                    return [
+                        'type' => $groups->map(function ($group) { 
+                                        return $group->aircraftType->name; 
+                                })[0],
+                        'count' => $groups->count()
+                    ];
+                })->values();          
+            
+                return [
+                    'id' => $item->id,
+                    'name' => $item->name,
+                    'rating' => '4.8 as rating',
+                    'flights' => 2587,
+                    'safety_rating' => explode(',', $client->safety_ratings),
+                    'response_time' => $client->response_time,
+                    'fleet_overview' => [
+                        'total_aircraft' => $client->assets->where('is_active', 1)->count(),
+                        'aircraft_types' => $aircraftTypes,                    
+                    ],
+                    'operating_regions' =>  $cities,
+                    'certifications' => explode(',', $client->certifications),
+                    'contact_methods' => [
+                        'email' => $client->email,
+                        'call' => $client->phone,
+                        'website' => $client->website
+                    ],
+                    'specialties' => explode(',', $client->specialties),
+                ];
+            });    
+        }
+        return response()->json(['status' => true, 'data' => $operators, 'message' => 'Operators fetched successfully'], 200);
     }
 }
 

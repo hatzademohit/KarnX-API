@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\BaseModelLoggingTrait;
-
+use App\Models\FormFieldsData\AirCraftTypes;
 class Asset extends Model
 {
     use BaseModelLoggingTrait;
@@ -13,7 +13,7 @@ class Asset extends Model
         'asset_name',
         'asset_type',
         'aircraft_model',
-        'aircraft_type',
+        'aircraft_type_id',
         'registration_no',
         'capacity',
         'cabin_size',
@@ -25,5 +25,10 @@ class Asset extends Model
     public function client()
     {
         return $this->belongsTo(Client::class, 'client_id');
+    }
+
+    public function aircraftType()
+    {
+        return $this->belongsTo(AirCraftTypes::class, 'aircraft_type_id');
     }
 }
