@@ -28,6 +28,11 @@ use App\Http\Controllers\Api\Dashboard\TravelAgentController;
 use App\Http\Controllers\Api\Dashboard\AircraftOperatorController;
 use App\Http\Controllers\Api\InquiryDetails\InquiryDetailsController;
 use App\Http\Controllers\Api\InquiryOperators\KXManager\InquiryOperatorsController;
+use App\Http\Controllers\Api\InquiryQuotes\InquiryQuoteController;
+use App\Http\Controllers\Api\FormFieldsData\CancellationPoliciesController;
+use App\Http\Controllers\Api\FormFieldsData\AvailableAmenitiesController;
+
+
 // Public route for user login
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLink']);
@@ -72,6 +77,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('travel-purposes', TravelingPurposeController::class);
         Route::apiResource('catering-dietary', CateringDietaryController::class);
         Route::apiResource('required-document-option', RequiredDocumentOptionController::class);
+        Route::apiResource('cancelation-policies', CancellationPoliciesController::class);
+        Route::apiResource('available-amenities', AvailableAmenitiesController::class);
     });
     /** Booking Inquiries Routes */ 
     Route::apiResource('booking-inquiries', BookingInquiriesController::class);
@@ -101,6 +108,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/get-assigned-operators', [InquiryOperatorsController::class, 'getAssignedOperators']);
         Route::post('/operators-assign', [InquiryOperatorsController::class, 'assignOperators']);
         Route::delete('/operators-remove/{id}', [InquiryOperatorsController::class, 'removeOperator']);        
+    });
+
+    /**Inquiry Quotes Routes */
+    Route::prefix('inquiry-quotes')->group(function () {
+        Route::get('/get-aircraft', [InquiryQuoteController::class, 'getMyAircraft']);       
+        Route::post('/submit-quote', [InquiryQuoteController::class, 'submitQuote']);       
     });
 
 });
