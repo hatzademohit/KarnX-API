@@ -48,7 +48,12 @@ class AircraftOperatorController extends Controller
     public function getCharterInquiries(Request $request)
     {
         // Fetch inquiry data dynamically with relations
-        $sub = \DB::table('booking_inquiry_process_statuses as a') ->select('a.booking_inquiries_id', 'a.status_id') ->where('a.is_active', 1) ->where('a.user_client_id', Auth::user()->client_id);
+        $ps = \DB::table('booking_inquiry_process_statuses as a')
+            ->select('a.booking_inquiries_id', \DB::raw('MAX(a.status_id) as status_id'))
+            ->where('a.is_active', 1)
+            ->where('a.user_client_id', Auth::user()->client_id)
+            ->groupBy('a.booking_inquiries_id');
+
         $query = BookingInquiries::with([
             'flightDetails',
             'aircraftPreference',
@@ -58,26 +63,16 @@ class AircraftOperatorController extends Controller
             'medicalAssistance',
             'petTravels',
             'documents',
-        ]) 
-        ->leftJoinSub($sub, 'ps', function ($join) { 
-            $join->on('ps.booking_inquiries_id', '=', 'booking_inquiries.id'); 
+        ])
+        ->leftJoinSub($ps, 'ps', function ($join) {
+            $join->on('ps.booking_inquiries_id', '=', 'booking_inquiries.id');
         })
-        ->leftJoin('booking_status as b', 'b.id', '=', 'ps.status_id') 
-        ->Join('booking_inquiry_operator_assignments as c', 'c.booking_inquiries_id', '=', 'booking_inquiries.id') 
-        ->select('booking_inquiries.*', 'b.status_name', 'b.color_code') 
-        ->where('c.operator_id', Auth::user()->client_id);
-
-        // if ($request->has('client_id')) {
-        //     $query->where('booking_inquiries.client_id', $request->client_id);
-        // }
-        
-        //$query->where('booking_inquiries.requester_id', Auth::user()->id);
-
-        if ($request->has('search')) {
-            $query->where('booking_inquiries.booking_reference', 'like', '%' . $request->search . '%');
-        }
-
-        $bookings = $query->orderByDesc('booking_inquiries.id')->get();
+        ->leftJoin('booking_status as b', 'b.id', '=', 'ps.status_id')
+        ->join('booking_inquiry_operator_assignments as c', 'c.booking_inquiries_id', '=', 'booking_inquiries.id')
+        ->select('booking_inquiries.*', 'b.status_name', 'b.color_code')
+        ->where('c.operator_id', Auth::user()->client_id)
+        ->orderByDesc('booking_inquiries.id');
+        $bookings = $query->get();
         
         // Map to desired format
         $inquiries = $bookings->map(function ($item) {
