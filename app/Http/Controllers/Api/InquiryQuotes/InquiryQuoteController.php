@@ -7,6 +7,7 @@ use DB;
 use Auth;
 use App\Models\Asset;
 use App\Models\InquiryQuoteDetails;
+use App\Models\FormFieldsData\AvailableAmenties;
 
 class InquiryQuoteController extends Controller
 {
@@ -75,7 +76,23 @@ class InquiryQuoteController extends Controller
         
     }
 
-    public function getQuoteDetails(Request $request){
+    public function getQuotedQuotes(Request $request, $inquiryId){
+       try {
+            $lookup = [
+                'booking_inquiries_id' => $inquiryId
+            ];
+
+            $quotes = InquiryQuoteDetails::withRelations()->where($lookup)->orderBy('total', 'asc')->get();  
+            $quotes[0]['rating'] = 4.5;       
+            $data['quotes'] = $quotes;
+            $data['best_quote'] = InquiryQuoteDetails::select(DB::raw('min(total) as total'))->where($lookup)->first();
+            return response()->json(['status' => true, 'data' => $data, 'message' => 'Quote(s) fetched successfully'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function acceptRejectQuote(Request $request){
 
     }
 }

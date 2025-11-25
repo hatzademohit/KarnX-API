@@ -6,15 +6,17 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Asset;
 use Exception;
+use Auth;
 
 class AssetController extends Controller
 {
     // GET all assets
     public function index(Request $request)
     {
+
         try {
             $query = Asset::with('client');
-
+            $query->where(['client_id' => Auth::user()->client_id]);
             // 🔍 Search filter
             if ($request->has('search')) {
                 $search = $request->search;
@@ -75,7 +77,7 @@ class AssetController extends Controller
     // POST create asset
     public function store(Request $request)
     {
-        //dd($request->client_id);
+        
         try {
             $validated = $request->validate([
                 'client_id' => 'required|exists:clients,id',

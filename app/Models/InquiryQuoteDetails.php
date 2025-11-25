@@ -3,7 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use App\Traits\BaseModelLoggingTrait;
+use App\Models\FormFieldsData\CancellationPolicies;
+use App\Models\FormFieldsData\AvailableAmenties;
 
 class InquiryQuoteDetails extends Model
 {
@@ -27,4 +30,46 @@ class InquiryQuoteDetails extends Model
         'additional_notes',
         'amenities_ids',
     ];
+
+    // Optionally include computed amenities in JSON
+    protected $appends = ['available_amenities'];
+
+    public function client(){
+        return $this->belongsTo(Client::class, 'client_id');
+    }
+
+    public function aircraft(){
+        return $this->belongsTo(Asset::class, 'aircraft_id');
+    }
+
+    public function cancelationPolicy(){
+        return $this->belongsTo(CancellationPolicies::class, 'cancellation_policy_id');
+    }
+
+    // Accessor to resolve comma-separated IDs into models
+    public function getAvailableAmenitiesAttribute(): Collection
+    {
+        if (empty($this->amenities_ids)) {
+            return collect();
+        }
+        $ids = collect(explode(',', $this->amenities_ids))
+            ->map(fn ($id) => (int) trim($id))
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($ids->isEmpty()) {
+            return collect();
+        }
+        return AvailableAmenties::whereIn('id', $ids)->get();
+    }
+
+    public function scopeWithRelations($query)
+    {
+        return $query->with([
+            'client',
+            'aircraft',
+            'cancelationPolicy',
+        ]);
+    }
 }

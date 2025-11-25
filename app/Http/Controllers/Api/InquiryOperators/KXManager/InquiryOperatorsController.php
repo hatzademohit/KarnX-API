@@ -37,8 +37,12 @@ class InquiryOperatorsController extends Controller
             
             if (!empty($request->inquiry_id) && $request->operator_ids > 0){
                 foreach ($request->operator_ids as $operator_id) {
-                    BookingInquiriesAssignOperators::create(['booking_inquiries_id' => $request->inquiry_id, 'manager_id' => Auth::user()->id, 'operator_id' => $operator_id]);
-                    setInquiryStatuses($request->inquiry_id, [4,4], [Auth::user()->client_id, $operator_id]);                                        
+                    $lookup = ['booking_inquiries_id' => $request->inquiry_id, 'operator_id' => $operator_id];
+                    $payload = ['manager_id' => Auth::user()->id];
+                    $isAssigned = BookingInquiriesAssignOperators::updateOrCreate($lookup, $payload);
+                    if ($isAssigned->wasRecentlyCreated) {
+                        setInquiryStatuses($request->inquiry_id, [4,4], [Auth::user()->client_id, $operator_id]);
+                    }                                   
                 }
                 return response()->json(['status' => true, 'message' => 'Operators assigned successfully'], 200);
             } else {

@@ -60,7 +60,7 @@ class TravelAgentController extends Controller
         })
         ->leftJoin('booking_status as b', 'b.id', '=', 'ps.status_id') 
         ->leftJoin('clients as c', 'c.id', '=', 'booking_inquiries.manager_id') 
-        ->select('booking_inquiries.*', 'b.status_name', 'b.color_code', 'c.name as operator') 
+        ->select('booking_inquiries.*', 'b.status_name', 'b.id as status_id', 'b.color_code', 'c.name as operator') 
         ->where('booking_inquiries.requester_id', Auth::user()->id);
 
         if ($request->has('client_id')) {
@@ -126,6 +126,7 @@ class TravelAgentController extends Controller
                 'status_color' => $status_color,
                 'operators' => $item->operator,
                 'value' => 'val',
+                'status_id' => $item->status_id,
             ];
         })->toArray();
         return response()->json(['status' => true, 'data' => $inquiries, 'message' => 'Booking inquiries retrieved successfully']);
