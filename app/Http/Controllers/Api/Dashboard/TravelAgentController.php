@@ -29,7 +29,7 @@ class TravelAgentController extends Controller
 
                 'inquiry_pending_this_month' => BookingInquiries::Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')
                 ->Join('booking_status as b', 'b.id', '=', 'a.status_id')
-                ->where(['booking_inquiries.requester_id' => Auth::user()->id, 'a.is_active' => 1])->whereMonth('booking_inquiries.created_at', now()->month)->whereNotIn('b.id', [2,3,4,5,6])->count(),
+                ->where(['booking_inquiries.requester_id' => Auth::user()->id, 'a.is_active' => 1, 'a.user_client_id' => Auth::user()->client_id])->whereMonth('booking_inquiries.created_at', now()->month)->whereNotIn('a.status_id', [2])->count(),
 
                 'confirmed_booking_this_week' => BookingInquiries::Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')
                 ->Join('booking_status as b', 'b.id', '=', 'a.status_id')
@@ -44,7 +44,22 @@ class TravelAgentController extends Controller
     public function getCharterInquiries(Request $request)
     {
         // Fetch inquiry data dynamically with relations
-        $sub = \DB::table('booking_inquiry_process_statuses as a') ->select('a.booking_inquiries_id', 'a.status_id') ->where('a.is_active', 1) ->where('a.user_client_id', Auth::user()->client_id);
+        // $sub = \DB::table('booking_inquiry_process_statuses as a') ->select('a.booking_inquiries_id', 'a.status_id') ->where('a.is_active', 1) ->where('a.user_client_id', Auth::user()->client_id);
+
+        $sub = \DB::table('booking_inquiry_process_statuses as a')
+        ->join(
+        \DB::raw('(
+            SELECT booking_inquiries_id, MAX(id) AS max_id
+            FROM booking_inquiry_process_statuses
+            WHERE is_active = 1 AND user_client_id = ' . (int) Auth::user()->client_id . '
+            GROUP BY booking_inquiries_id
+        ) latest'),
+        function ($join) {
+            $join->on('latest.max_id', '=', 'a.id');
+        }
+        )
+        ->select('a.booking_inquiries_id', 'a.status_id');
+
         $query = BookingInquiries::with([
             'flightDetails',
             'aircraftPreference',
@@ -54,6 +69,9 @@ class TravelAgentController extends Controller
             'medicalAssistance',
             'petTravels',
             'documents',
+            'assignedQuotes',
+            'assigndOperators'
+
         ]) 
         ->leftJoinSub($sub, 'ps', function ($join) { 
             $join->on('ps.booking_inquiries_id', '=', 'booking_inquiries.id'); 
@@ -110,7 +128,16 @@ class TravelAgentController extends Controller
             if($item->flightDetails){
                 $formattedDate = $item->flightDetails->departure_time !== null ? date('F d, Y', strtotime($item->flightDetails->departure_time)) : null;
             }
+            $quoteValue = $item->assignedQuotes->whereIn('is_selected', ['selected','approved'])->first();
+            $quoteAmt = '-'; $operatorName = '-';
+            if($quoteValue){
+                $quoteAmt = $quoteValue->total + ((((float)$quoteValue->total / 100) * (float)$quoteValue->kx_mgr_commission_per) ?? 0);
+                $quoteAmt = $quoteValue->travel_agent_commission_per != null ? $quoteAmt + (($quoteAmt / 100) * $quoteValue->travel_agent_commission_per) : $quoteAmt;
+                $quoteAmt = number_format($quoteAmt);
 
+                $operatorName = Client::where('id', $quoteValue->client_id)->first('name')->name;
+            }
+            
             return [
                 'id' => $item->id,
                 'inquiryId' => $item->booking_reference ?? null,
@@ -124,9 +151,11 @@ class TravelAgentController extends Controller
                 'aircraft' => $aircraftType,
                 'status' => $status,
                 'status_color' => $status_color,
-                'operators' => $item->operator,
-                'value' => 'val',
+                'operator' => $operatorName,
+                'value' => $quoteAmt,
                 'status_id' => $item->status_id,
+                'quote_received' => $item->assignedQuotes->whereIn('is_selected', ['selected','approved'])->count() ?? 0,
+                'operator_assigned' => $item->assignedQuotes->whereIn('is_selected', ['selected','approved'])->count() ?? 0,
             ];
         })->toArray();
         return response()->json(['status' => true, 'data' => $inquiries, 'message' => 'Booking inquiries retrieved successfully']);

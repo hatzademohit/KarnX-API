@@ -164,6 +164,15 @@ class KXManagerController extends Controller
                 $formattedDate = $item->flightDetails->departure_time !== null ? date('F d, Y', strtotime($item->flightDetails->departure_time)) : null;
             }
 
+            $quoteValue = $item->assignedQuotes->whereIn('is_selected', ['selected','approved'])->first();
+            $quoteAmt = '-'; //$operatorName = '-';
+            if($quoteValue){
+                $quoteAmt = $quoteValue->total + ((((float)$quoteValue->total / 100) * (float)$quoteValue->kx_mgr_commission_per) ?? 0);
+                $quoteAmt = $quoteValue->travel_agent_commission_per != null ? $quoteAmt + (($quoteAmt / 100) * $quoteValue->travel_agent_commission_per) : $quoteAmt;
+                $quoteAmt = number_format($quoteAmt);
+
+                //$operatorName = Client::where('id', $quoteValue->client_id)->first('name')->name;
+            }
 
             return [
                 'id' => $item->id,
@@ -179,7 +188,7 @@ class KXManagerController extends Controller
                 'status' => $status,
                 'status_color' => $status_color,
                 'operators' => $item->assigndOperators->count().'/'.$item->assignedQuotes->count().' responses',
-                'value' => '0',
+                'value' => $quoteAmt,
                 'status_id' => $item->status_id,
                 'quote_received' => $item->assignedQuotes->count() ?? 0,
                 'operator_assigned' => $item->assigndOperators->count() ?? 0,

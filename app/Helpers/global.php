@@ -10,11 +10,15 @@ function getDefualtClient()
 function setInquiryStatuses($inquiry_id, $statusIds, $toIds)
 {
     $forUser = $toIds;
-    foreach ($forUser as $key => $usr) {
-        BookingInquiriesStatuses::create([
+    foreach ($forUser as $key => $usr) {        
+        $isInserted = BookingInquiriesStatuses::create([
             'booking_inquiries_id' => $inquiry_id,
-            'status_id' => $statusIds[$key], //Requested
+            'status_id' => $statusIds[$key],
             'user_client_id' => $usr,
         ]);
+
+        if($isInserted){
+            BookingInquiriesStatuses::update(['is_active' => 0])->where(['booking_inquiries_id' => $inquiry_id, 'user_client_id' => $usr]);
+        }        
     }
 }

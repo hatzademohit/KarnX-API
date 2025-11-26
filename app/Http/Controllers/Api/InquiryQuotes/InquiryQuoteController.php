@@ -9,6 +9,7 @@ use App\Models\Asset;
 use App\Models\InquiryQuoteDetails;
 use App\Models\FormFieldsData\AvailableAmenties;
 use App\Models\Client;
+use App\Models\BookingInquiries\BookingInquiries;
 
 class InquiryQuoteController extends Controller
 {
@@ -89,17 +90,30 @@ class InquiryQuoteController extends Controller
                $lookup['client_id'] = Auth::user()->client_id;
             }
 
-            if($myAccessType === 'Aircraft Travel Agent'){
-               $lookup['is_selected'] = 'selected';
-               $lookup['is_selected'] = 'approved';
-            }
+            
 
-            $quotes = InquiryQuoteDetails::withRelations()->where($lookup)->orderBy('total', 'asc')->get();  
+            $quotes = InquiryQuoteDetails::withRelations()->where($lookup);
+                if($myAccessType === 'Aircraft Travel Agent'){
+                    $quotes = $quotes->whereIn('is_selected', ['selected', 'approved']);
+                }
+            $quotes = $quotes->orderBy('total', 'asc')->get();  
+           
             $quotes[0]['rating'] = 4.5;       
             $data['quotes'] = $quotes;
-            $notRejectedQuotes = InquiryQuoteDetails::withRelations()->where($lookup)->where('is_selected', '!=', 'rejected')->orderBy('total', 'asc');
+            $notRejectedQuotes = InquiryQuoteDetails::withRelations()->where($lookup);
+                if($myAccessType === 'Aircraft Travel Agent'){
+                    $notRejectedQuotes = $notRejectedQuotes->whereIn('is_selected', ['selected', 'approved']);
+                }
+            $notRejectedQuotes = $notRejectedQuotes->where('is_selected', '!=', 'rejected')->orderBy('total', 'asc');
             $data['non_rejected_quotes'] = $notRejectedQuotes->count() > 1? $notRejectedQuotes->get(): [];
-            $data['best_quote'] = InquiryQuoteDetails::select(DB::raw('min(total) as total'))->where($lookup)->whereNot('is_selected', 'rejected')->first();
+
+            $bestQuote = InquiryQuoteDetails::select(DB::raw('min(total) as total'))->where($lookup)->whereNot('is_selected', 'rejected');
+                if($myAccessType === 'Aircraft Travel Agent'){
+                    $bestQuote = $bestQuote->whereIn('is_selected', ['selected', 'approved']);
+                }
+            $bestQuote = $bestQuote->first();
+            $data['best_quote'] = $bestQuote;
+
             return response()->json(['status' => true, 'data' => $data, 'message' => 'Quote(s) fetched successfully'], 200);
         } catch (\Exception $e) {
             return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
@@ -124,22 +138,30 @@ class InquiryQuoteController extends Controller
 
         try {
             $data = $request->all();
+           
             $acceptedQId = $data['acceptedQId'];
-            foreach ($data['quoteIds'] as $key => $qId) {
+            $quoteIds = array_unique($data['quoteIds']);
+            //$quoteIds = array_push($quoteIds, $acceptedQId);
+            $bookingInfo = BookingInquiries::find($data['inquiryId']);
+            $quoteIds = array_merge($quoteIds, [$acceptedQId]);
+            $quoteId = array_unique($quoteId);
+            //return response()->json(['status' => false, 'message' => $quoteIds], 500);
+            foreach ($quoteIds as $key => $qId) {
                 $quote = InquiryQuoteDetails::find($qId);
                 if($qId === $acceptedQId){
                     $quote->is_selected = 'selected';
                     $quote->rejected_reason = NULL;
+                    $quote->kx_mgr_commission_per = $data['kxMgrCommissionPercent'];
                     $quote->save();
                     setInquiryStatuses($data['inquiryId'], [8], [$quote->client_id]); //selected sts Id
                 }else{
                     $quote->is_selected = 'rejected';
-                    $quote->rejected_reason = $data['message'];
+                    $quote->rejected_reason = $data['message'][$key];
                     $quote->save();
                     setInquiryStatuses($data['inquiryId'], [9], [$quote->client_id]); //rejected sts Id
                 }                
             }
-            setInquiryStatuses($data['inquiryId'], [7], [Auth::user()->client_id]); //approved sts Id
+            setInquiryStatuses($data['inquiryId'], [7,10], [Auth::user()->client_id, $bookingInfo->client_id]); //approved sts Id
             return response()->json(['status' => true, 'message' => 'Quote accepted successfully'], 200);
         } catch (\Exception $e) {
              return response()->json(['status' => false, 'message' => $e->getMessage()], 500);

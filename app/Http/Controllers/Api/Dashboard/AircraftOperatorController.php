@@ -24,7 +24,7 @@ class AircraftOperatorController extends Controller
 
                 'quote_pending' => BookingInquiries::Join('booking_inquiry_operator_assignments as c', 'c.booking_inquiries_id', '=', 'booking_inquiries.id')
                         ->Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')
-                        ->where('a.is_active', 1)->whereIn('a.status_id', [5])->where('a.user_client_id', Auth::user()->client_id)
+                        ->where('a.is_active', 1)->whereIn('a.status_id', [5,8])->where('a.user_client_id', Auth::user()->client_id)
                         ->where('c.operator_id', Auth::user()->client_id)->count(),
 
                 'upcoming_flights' => BookingInquiries::Join('booking_inquiry_operator_assignments as c', 'c.booking_inquiries_id', '=', 'booking_inquiries.id')
