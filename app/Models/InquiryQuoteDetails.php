@@ -29,6 +29,11 @@ class InquiryQuoteDetails extends Model
         'special_offers_promotions',
         'additional_notes',
         'amenities_ids',
+        'is_selected',
+        'rejected_reason',
+        'kx_mgr_commission_per',
+        'travel_agent_commission_per',
+
     ];
 
     // Optionally include computed amenities in JSON

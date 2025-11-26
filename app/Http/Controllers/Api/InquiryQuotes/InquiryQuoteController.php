@@ -97,6 +97,8 @@ class InquiryQuoteController extends Controller
             $quotes = InquiryQuoteDetails::withRelations()->where($lookup)->orderBy('total', 'asc')->get();  
             $quotes[0]['rating'] = 4.5;       
             $data['quotes'] = $quotes;
+            $notRejectedQuotes = InquiryQuoteDetails::withRelations()->where($lookup)->where('is_selected', '!=', 'rejected')->orderBy('total', 'asc');
+            $data['non_rejected_quotes'] = $notRejectedQuotes->count() > 1? $notRejectedQuotes->get(): [];
             $data['best_quote'] = InquiryQuoteDetails::select(DB::raw('min(total) as total'))->where($lookup)->whereNot('is_selected', 'rejected')->first();
             return response()->json(['status' => true, 'data' => $data, 'message' => 'Quote(s) fetched successfully'], 200);
         } catch (\Exception $e) {
@@ -106,21 +108,42 @@ class InquiryQuoteController extends Controller
 
     public function rejectQuote(Request $request){
         try {
-            $data = $request->all();
-            $lookup = [
-                'booking_inquiries_id' => $data['inquiryId'],
-                'id' => $data['quoteId'],
-            ];
+            $data = $request->all();            
             $quote = InquiryQuoteDetails::find($data['quoteId']);
             $quote->is_selected = 'rejected';
+            $quote->rejected_reason = $data['message'];
             $quote->save();
-            setInquiryStatuses($data['inquiryId'], [9], [$quote->client_id]);
-            // return response()->json(['status' => false, 'message' => $temp], 500);
-            // InquiryQuoteDetails::update(['is_selected' => 'rejected'])->where($lookup);
-            // setInquiryStatuses($data['inquiryId'], [9], []);
+            setInquiryStatuses($data['inquiryId'], [9], [$quote->client_id]); //rejected sts Id
             return response()->json(['status' => true, 'message' => 'Quote rejected successfully'], 200);
         } catch (\Exception $e) {
             return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
         }
+    }
+
+    public function acceptQuote(Request $request){
+
+        try {
+            $data = $request->all();
+            $acceptedQId = $data['acceptedQId'];
+            foreach ($data['quoteIds'] as $key => $qId) {
+                $quote = InquiryQuoteDetails::find($qId);
+                if($qId === $acceptedQId){
+                    $quote->is_selected = 'selected';
+                    $quote->rejected_reason = NULL;
+                    $quote->save();
+                    setInquiryStatuses($data['inquiryId'], [8], [$quote->client_id]); //selected sts Id
+                }else{
+                    $quote->is_selected = 'rejected';
+                    $quote->rejected_reason = $data['message'];
+                    $quote->save();
+                    setInquiryStatuses($data['inquiryId'], [9], [$quote->client_id]); //rejected sts Id
+                }                
+            }
+            setInquiryStatuses($data['inquiryId'], [7], [Auth::user()->client_id]); //approved sts Id
+            return response()->json(['status' => true, 'message' => 'Quote accepted successfully'], 200);
+        } catch (\Exception $e) {
+             return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
+        }
+
     }
 }

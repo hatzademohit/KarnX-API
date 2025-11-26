@@ -4,6 +4,9 @@ namespace App\Models\BookingInquiries;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\BaseModelLoggingTrait;
+use App\Models\BookingInquiries\BookingInquiriesAssignOperators;
+use App\Models\InquiryQuoteDetails;
+
 class BookingInquiries extends Model
 {
     use BaseModelLoggingTrait;
@@ -28,7 +31,13 @@ class BookingInquiries extends Model
     
     public function flightDetails() { return $this->hasOne(BookingInquiriesFlightDetail::class); }
     //public function passengersInformation() { return $this->hasOne(BookingInquiriesPassengersInformation::class); }
-   
+    public function assigndOperators(){
+        return $this->hasMany(BookingInquiriesAssignOperators::class, 'booking_inquiries_id');
+    }
+
+    public function assignedQuotes(){
+        return $this->hasMany(InquiryQuoteDetails::class, 'booking_inquiries_id');
+    }
 
     public function scopeWithRelations($query)
     {
@@ -40,7 +49,9 @@ class BookingInquiries extends Model
             'cateringServices',            
             'contactInformation',                     
             'documents',
-            'flightDetails'
+            'flightDetails',
+            'assigndOperators',
+            'assignedQuotes'
             /*'passengersInformation'*/
             
         ]);
@@ -56,7 +67,9 @@ class BookingInquiries extends Model
             'cateringServices',
             'contactInformation',            
             'documents',            
-            'flightDetails'
+            'flightDetails',
+            'assigndOperators',
+            'assignedQuotes'
             /*'passengersInformation'*/
             
         ]);

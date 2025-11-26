@@ -108,6 +108,8 @@ class KXManagerController extends Controller
                 'medicalAssistance',
                 'petTravels',
                 'documents',
+                'assigndOperators',
+                'assignedQuotes'
             ])
             ->leftJoinSub($latestPerBooking, 'ps', function ($join) {
                 $join->on('ps.booking_inquiries_id', '=', 'booking_inquiries.id');
@@ -125,7 +127,7 @@ class KXManagerController extends Controller
         }
 
         $bookings = $query->orderByDesc('booking_inquiries.id')->get();
-        
+       
         // Map to desired format
         $inquiries = $bookings->map(function ($item) {
             // Compose route
@@ -162,6 +164,7 @@ class KXManagerController extends Controller
                 $formattedDate = $item->flightDetails->departure_time !== null ? date('F d, Y', strtotime($item->flightDetails->departure_time)) : null;
             }
 
+
             return [
                 'id' => $item->id,
                 'inquiryId' => $item->booking_reference ?? null,
@@ -175,9 +178,11 @@ class KXManagerController extends Controller
                 'aircraft' => $aircraftType,
                 'status' => $status,
                 'status_color' => $status_color,
-                'operators' => $item->operator,
+                'operators' => $item->assigndOperators->count().'/'.$item->assignedQuotes->count().' responses',
                 'value' => '0',
                 'status_id' => $item->status_id,
+                'quote_received' => $item->assignedQuotes->count() ?? 0,
+                'operator_assigned' => $item->assigndOperators->count() ?? 0,
             ];
         })->toArray();
         return response()->json(['status' => true, 'data' => $inquiries, 'message' => 'Booking inquiries retrieved successfully']);
