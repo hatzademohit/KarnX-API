@@ -140,11 +140,11 @@ class InquiryQuoteController extends Controller
             $data = $request->all();
            
             $acceptedQId = $data['acceptedQId'];
-            $quoteIds = array_unique($data['quoteIds']);
+            $quoteIds = isset($data['quoteIds'])?array_unique($data['quoteIds']):[];
             //$quoteIds = array_push($quoteIds, $acceptedQId);
             $bookingInfo = BookingInquiries::find($data['inquiryId']);
             $quoteIds = array_merge($quoteIds, [$acceptedQId]);
-            $quoteId = array_unique($quoteId);
+            $quoteIds = array_unique($quoteIds);
             //return response()->json(['status' => false, 'message' => $quoteIds], 500);
             foreach ($quoteIds as $key => $qId) {
                 $quote = InquiryQuoteDetails::find($qId);
