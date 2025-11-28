@@ -18,7 +18,7 @@ function setInquiryStatuses($inquiry_id, $statusIds, $toIds)
         ]);
 
         if($isInserted){
-            //BookingInquiriesStatuses::where(['booking_inquiries_id' => $inquiry_id, 'user_client_id' => $usr])->update(['is_active' => 0]);
+            BookingInquiriesStatuses::where(['booking_inquiries_id' => $inquiry_id, 'user_client_id' => $usr])->where('id', '!=', $isInserted->id)->update(['is_active' => 0]);
         }        
     }
 }

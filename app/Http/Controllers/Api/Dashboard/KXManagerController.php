@@ -8,11 +8,14 @@ use App\Models\bookingInquiries\BookingInquiries;
 use Illuminate\Support\Facades\Auth;
 use App\Models\FormFieldsData\AirportCities;
 use App\Models\FormFieldsData\AirCraftTypes;
+use Carbon\Carbon;
 
 class KXManagerController extends Controller
 {
     public function cardCount()
     { 
+        $clientDecision = BookingInquiries::Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')->Join('booking_status as b', 'b.id', '=', 'a.status_id')->Join('inquiry_quote_details as iqd', 'iqd.booking_inquiries_id', '=', 'booking_inquiries.id')->where('iqd.is_selected', 'selected')->where(['a.is_active' => 1])->whereIn('b.id', [7]);
+        
         return response()->json([
             'success' => true,
             'data' => [
@@ -24,7 +27,8 @@ class KXManagerController extends Controller
                 ->Join('booking_status as b', 'b.id', '=', 'a.status_id')
                 ->where(['a.is_active' => 1])->whereMonth('booking_inquiries.created_at', now()->month)->whereIn('b.id', [4])->count(),  
 
-                'clients_decision' => 0,
+                'clients_decision' => $clientDecision->count(),
+                'clients_decision_expiring_soon' => $clientDecision->whereBetween('validate_till', [now(), now()->addDays(8)])->count(),
 
                 'confirmed_booking' => BookingInquiries::Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')
                 ->Join('booking_status as b', 'b.id', '=', 'a.status_id')
