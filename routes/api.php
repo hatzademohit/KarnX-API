@@ -117,6 +117,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/edit-quote/{inquiryId}', [InquiryQuoteController::class, 'editQuote']); 
         Route::get('/get-quoted-quotes/{inquiryId}', [InquiryQuoteController::class, 'getQuotedQuotes']);
         Route::post('/reject-quote', [InquiryQuoteController::class, 'rejectQuote']);
+        Route::post('/approve-quote', [InquiryQuoteController::class, 'approveQuote']);
         Route::post('/accept-quote', [InquiryQuoteController::class, 'acceptQuote']);
     });
 
