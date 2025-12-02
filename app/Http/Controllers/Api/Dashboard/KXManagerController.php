@@ -139,7 +139,7 @@ class KXManagerController extends Controller
             if ($item->flightDetails) {
                 $dep = $item->flightDetails[0]->departure_location;
                 $arr = $item->flightDetails[0]->arrival_location;
-                $dep = AirportCities;
+                $dep = AirportCities::find($dep)->code;
                 $arr = AirportCities::find($arr)->code;
                 $route = $dep . ' → ' . $arr;
             }
