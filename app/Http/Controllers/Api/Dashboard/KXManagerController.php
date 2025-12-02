@@ -137,8 +137,8 @@ class KXManagerController extends Controller
             // Compose route
             $route = null;
             if ($item->flightDetails) {
-                $dep = $item->flightDetails->departure_location;
-                $arr = $item->flightDetails->arrival_location;
+                $dep = $item->flightDetails[0]->departure_location;
+                $arr = $item->flightDetails[0]->arrival_location;
                 $dep = AirportCities::find($dep)->code;
                 $arr = AirportCities::find($arr)->code;
                 $route = $dep . ' → ' . $arr;
@@ -165,7 +165,7 @@ class KXManagerController extends Controller
             $bookingDate = $item->booking_date ? date('M/d/Y', strtotime($item->booking_date)) : null;
             $formattedDate = null;
             if($item->flightDetails){
-                $formattedDate = $item->flightDetails->departure_time !== null ? date('F d, Y', strtotime($item->flightDetails->departure_time)) : null;
+                $formattedDate = $item->flightDetails[0]->departure_time !== null ? date('F d, Y', strtotime($item->flightDetails[0]->departure_time)) : null;
             }
 
             $quoteValue = $item->assignedQuotes->whereIn('is_selected', ['selected','approved'])->first();

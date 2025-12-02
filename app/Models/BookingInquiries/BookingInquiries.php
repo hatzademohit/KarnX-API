@@ -29,7 +29,7 @@ class BookingInquiries extends Model
     
     public function documents() { return $this->hasMany(BookingInquiriesDocument::class); }
     
-    public function flightDetails() { return $this->hasOne(BookingInquiriesFlightDetail::class); }
+    public function flightDetails() { return $this->hasMany(BookingInquiriesFlightDetail::class); }
     //public function passengersInformation() { return $this->hasOne(BookingInquiriesPassengersInformation::class); }
     public function assigndOperators(){
         return $this->hasMany(BookingInquiriesAssignOperators::class, 'booking_inquiries_id');

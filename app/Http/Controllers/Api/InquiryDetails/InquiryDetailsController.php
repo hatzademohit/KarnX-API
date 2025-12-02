@@ -42,16 +42,29 @@ class InquiryDetailsController extends Controller
         
 
         $booking = $query->get();
+        //dd($booking);
         // Map to desired format
         $inquiries = $booking->map(function ($item) {
             // Compose route
-            $route = null;
+            $route = [];
             if ($item->flightDetails) {
-                $dep = $item->flightDetails->departure_location;
-                $arr = $item->flightDetails->arrival_location;
-                $dep = AirportCities::find($dep)->code;
-                $arr = AirportCities::find($arr)->code;
-                $route = $dep . ' → ' . $arr;
+                $flightDetails = $item->flightDetails;
+                foreach($flightDetails as $fd){
+                    $dep = $fd->departure_location;
+                    $arr = $fd->arrival_location;
+                    $dep = AirportCities::find($dep)->code;
+                    $arr = AirportCities::find($arr)->code;
+                    // $route[] = $dep . ' → ' . $arr;
+                    $depTime = 'NA';
+                    $retTime = 'NA'; 
+                    //dd($fd->departure_time);
+                    if($item->is_flexible_dates === 0){
+                        $depTime = date('F d, Y \a\\t h:i A', strtotime($fd->departure_time));
+                        $retTime = $fd->return_date_time?date('F d, Y \a\\t h:i A', strtotime($fd->return_date_time)):'';
+                    }
+                    
+                    $route[] = ['departure_location' => $dep, 'arrival_location' => $arr, 'flight_departure_time' => $depTime, 'flight_return_time' => $retTime];
+                }                
             }
             // Compose aircraft type
             $aircraftType = null;
@@ -83,10 +96,10 @@ class InquiryDetailsController extends Controller
             $assign = 'Assigned';
             // Date formatting
             $bookingDate = $item->booking_date ? date('M/d/Y', strtotime($item->booking_date)) : null;
-            $formattedDate = null;
-            if($item->flightDetails){
-                $formattedDate = $item->flightDetails->departure_time !== null ? date('F d, Y', strtotime($item->flightDetails->departure_time)) : null;
-            }
+            // $formattedDate = null;
+            // if($item->flightDetails){
+            //     $formattedDate = $item->flightDetails->departure_time !== null ? date('F d, Y', strtotime($item->flightDetails->departure_time)) : null;
+            // }
             $travel_purpose = null;
             if($item->travel_purpose_id){
                 $travel_purpose = TravelingPurpose::find($item->travel_purpose_id)->name;
@@ -190,7 +203,7 @@ class InquiryDetailsController extends Controller
                 'is_traveling_pets' => $item->is_traveling_pets == 0 ?'No':'Yes',
                 'inquiryDate' => $bookingDate,
                 'created_on' => date("F d, Y \a\\t h:i A", strtotime($item->created_at)),
-                'date' => $formattedDate,
+                //'date' => $formattedDate,
                 'passangers' => $item->passenger_info_total ?? null,
                 'aircraft' => $aircraftType,
                 'traveling_purpose' => $travel_purpose,
@@ -205,6 +218,8 @@ class InquiryDetailsController extends Controller
                 'medical_assistance_req' => $medicalReqAssistance ?? [],
                 'uploaded_documents_path' => $uploadedDocumentsFiles ?? [],
                 'required_documents_name' => $requiredDocumentsname ?? [],
+                'trip_type' => ucwords(str_replace('_', ' ', $item->trip_type)) ?? 'NA',
+                'is_flexible_date' => $item->is_flexible_dates ?? 0,
             ];
         })->toArray();
         return response()->json(['status' => true, 'data' => $inquiries[0] ?? [], 'message' => 'Booking inquiries retrieved successfully', ]);
