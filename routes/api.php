@@ -113,6 +113,7 @@ Route::middleware('auth:sanctum')->group(function () {
     /**Inquiry Quotes Routes */
     Route::prefix('inquiry-quotes')->group(function () {
         Route::get('/get-aircraft', [InquiryQuoteController::class, 'getMyAircraft']);       
+        Route::get('/get-booking-flight-details/{inquiryId}', [InquiryQuoteController::class, 'getBookingFlightDetails']);       
         Route::post('/submit-quote', [InquiryQuoteController::class, 'submitQuote']);    
         Route::get('/edit-quote/{inquiryId}', [InquiryQuoteController::class, 'editQuote']); 
         Route::get('/get-quoted-quotes/{inquiryId}', [InquiryQuoteController::class, 'getQuotedQuotes']);

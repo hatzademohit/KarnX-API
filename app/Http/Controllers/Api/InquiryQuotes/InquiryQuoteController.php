@@ -10,6 +10,7 @@ use App\Models\InquiryQuoteDetails;
 use App\Models\FormFieldsData\AvailableAmenties;
 use App\Models\Client;
 use App\Models\BookingInquiries\BookingInquiries;
+use App\Models\FormFieldsData\AirportCities;
 
 class InquiryQuoteController extends Controller
 {
@@ -25,6 +26,34 @@ class InquiryQuoteController extends Controller
         } catch (\Exception $e) {
            return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
         }        
+    }
+
+    public function getBookingFlightDetails(Request $request, $inquiryId){
+           
+        try {
+            $query = BookingInquiries::with(['flightDetails'])->where('id', $inquiryId)->first();
+            
+            $data['trip_type'] = $query->trip_type;
+            $data['is_flexible_dates'] = $query->is_flexible_dates;
+            $data['flexible_range'] = $query->flexible_range;
+            $details = [];
+            
+            foreach($query->flightDetails as $fd){
+                $arrCity = AirportCities::find($fd->arrival_location);
+                $depCity = AirportCities::find($fd->departure_location);
+                $cityTime['departure_time'] = $fd->departure_time;
+                $cityTime['departure_city'] = $depCity->code;
+                $cityTime['arrival_city'] = $arrCity->code;
+
+                $details[] = $cityTime;
+            }
+            
+            $data['flight_time'] =  $details;
+
+            return response()->json(['status' => true, 'data' => $data, 'message' => 'Booking details fetched successfully'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 
     public function submitQuote(Request $request){

@@ -88,11 +88,11 @@ class InquiryOperatorsController extends Controller
                                 })[0],
                         'count' => $groups->count()
                     ];
-                })->values();          
-            
+                })->values();  
+                
                 return [
                     'id' => $item->id,
-                    'name' => $item->name,
+                    'name' => $item->client->name,
                     'rating' => '4.8 as rating',
                     'flights' => 2587,
                     'safety_rating' => explode(',', $client->safety_ratings),
