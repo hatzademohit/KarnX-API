@@ -47,7 +47,7 @@ class InquiryQuoteController extends Controller
 
                 $details[] = $cityTime;
             }
-            
+
             $data['flight_time'] =  $details;
 
             return response()->json(['status' => true, 'data' => $data, 'message' => 'Booking details fetched successfully'], 200);
@@ -191,7 +191,7 @@ class InquiryQuoteController extends Controller
                 }                
             }
             setInquiryStatuses($data['inquiryId'], [7,10], [Auth::user()->client_id, $bookingInfo->client_id]); //approved sts Id
-            return response()->json(['status' => true, 'message' => 'Quote accepted successfully'], 200);
+            return response()->json(['status' => true, 'message' => 'Quote approved successfully'], 200);
         } catch (\Exception $e) {
              return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
         }
@@ -199,6 +199,28 @@ class InquiryQuoteController extends Controller
     }
 
     public function acceptQuote(Request $request){
+            $qId = $request->quoteId;
+            $inquiryId = $request->inquiryId;
+            try {
+                $quote = InquiryQuoteDetails::find($qId); 
+                setInquiryStatuses($inquiryId, [17, 17, 17], [Auth::user()->client_id, $quote->client_id, getDefualtClient()]); //selected sts Id
+                return response()->json(['status' => true, 'message' => 'Quote accepted successfully'], 200);
+            } catch (\Exception $e) {
+                 return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
+            }
+    }
 
+    public function confirmBooking(Request $request){
+            
+            $qId = $request->quoteId;
+            $inquiryId = $request->inquiryId;
+            return response()->json(['status' => false, 'message' => $qId], 200);
+            try {
+                $quote = InquiryQuoteDetails::find($qId); 
+                setInquiryStatuses($inquiryId, [17, 17, 17], [Auth::user()->client_id, $quote->client_id, getDefualtClient()]); //selected sts Id
+                return response()->json(['status' => true, 'message' => 'Quote accepted successfully', 'data' => $quote], 200);
+            } catch (\Exception $e) {
+                 return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
+            }
     }
 }

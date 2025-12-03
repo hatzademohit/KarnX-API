@@ -120,6 +120,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/reject-quote', [InquiryQuoteController::class, 'rejectQuote']);
         Route::post('/approve-quote', [InquiryQuoteController::class, 'approveQuote']);
         Route::post('/accept-quote', [InquiryQuoteController::class, 'acceptQuote']);
+        Route::post('/confirm-booking', [InquiryQuoteController::class, 'confirmBooking']);
     });
 
 });

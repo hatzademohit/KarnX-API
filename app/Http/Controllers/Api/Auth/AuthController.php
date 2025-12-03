@@ -38,6 +38,7 @@ class AuthController extends Controller
             //$user = $user->load('roles', 'permissions'); // eager load
             
             return response()->json([
+                'status' => true,
                 'message' => 'Login successful',
                 'user' => $user,
                 'token' => $token,
@@ -47,12 +48,14 @@ class AuthController extends Controller
 
         } catch (ValidationException $e) {
             return response()->json([
+                'status' => false,
                 'message' => $e->getMessage(),
                 'errors' => $e->errors(),
             ], 422);
 
         } catch (\Throwable $th) {
             return response()->json([
+                'status' => false,
                 'message' => $th->getMessage(),
                 'error' => $th->getMessage(),
             ], 500);
