@@ -39,7 +39,7 @@ class AircraftOperatorController extends Controller
 
                 'completed_bookings' => BookingInquiries::Join('booking_inquiry_operator_assignments as c', 'c.booking_inquiries_id', '=', 'booking_inquiries.id')
                         ->Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')
-                        ->where('a.is_active', 1)->whereIn('a.status_id', [14,15])->where('a.user_client_id', Auth::user()->client_id)
+                        ->where('a.is_active', 1)->whereIn('a.status_id', [11,14,15])->where('a.user_client_id', Auth::user()->client_id)
                         ->where('c.operator_id', Auth::user()->client_id)->count(),
             ],
         ]);

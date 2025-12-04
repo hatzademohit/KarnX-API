@@ -11,6 +11,8 @@ use App\Models\FormFieldsData\AvailableAmenties;
 use App\Models\Client;
 use App\Models\BookingInquiries\BookingInquiries;
 use App\Models\FormFieldsData\AirportCities;
+use App\Models\BookingInquiries\BookingTravellerDetails;
+use App\Models\BookingInquiries\BookingTravellerContactDetails;
 
 class InquiryQuoteController extends Controller
 {
@@ -203,7 +205,9 @@ class InquiryQuoteController extends Controller
             $inquiryId = $request->inquiryId;
             try {
                 $quote = InquiryQuoteDetails::find($qId); 
-                setInquiryStatuses($inquiryId, [17, 17, 17], [Auth::user()->client_id, $quote->client_id, getDefualtClient()]); //selected sts Id
+                $quote->is_selected = 'approved';
+                $quote->save();
+                //setInquiryStatuses($inquiryId, [17, 17, 17], [Auth::user()->client_id, $quote->client_id, getDefualtClient()]); //selected sts Id
                 return response()->json(['status' => true, 'message' => 'Quote accepted successfully'], 200);
             } catch (\Exception $e) {
                  return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
@@ -212,15 +216,55 @@ class InquiryQuoteController extends Controller
 
     public function confirmBooking(Request $request){
             
-            $qId = $request->quoteId;
+            $qId =  $request->quoteId['quoteId'];
             $inquiryId = $request->inquiryId;
-            return response()->json(['status' => false, 'message' => $qId], 200);
+            $data = $request->data;
             try {
+
+                if(isset($data['infants'])){
+                    $this->setTravellerNames($data, 'infants', $inquiryId, $qId);
+                }
+
+                if(isset($data['children'])){
+                    $this->setTravellerNames($data, 'children', $inquiryId, $qId);
+                }
+
+                if(isset($data['adults'])){
+                    $this->setTravellerNames($data, 'adults', $inquiryId, $qId);
+                }
+                
+                BookingTravellerContactDetails::create([
+                    'booking_inquiries_id' => $inquiryId,
+                    'client_id' => Auth::user()->client_id,
+                    'contact_name' => $data['contact_name'],
+                    'contact_email' => $data['contact_email'],
+                    'contact_phone' => $data['contact_phone'],
+                    'pincode' => $data['pincode'],
+                    'address' => $data['address'],
+                    'city' => $data['city']
+                ]);
                 $quote = InquiryQuoteDetails::find($qId); 
-                setInquiryStatuses($inquiryId, [17, 17, 17], [Auth::user()->client_id, $quote->client_id, getDefualtClient()]); //selected sts Id
-                return response()->json(['status' => true, 'message' => 'Quote accepted successfully', 'data' => $quote], 200);
+                $booking = BookingInquiries::find($inquiryId);
+                $booking->is_confirmed = 1;
+                $booking->save();
+                setInquiryStatuses($inquiryId, [11, 11, 11], [Auth::user()->client_id, $quote->client_id, getDefualtClient()]); //selected sts Id
+                return response()->json(['status' => true, 'message' => 'Quote accepted successfully'], 200);
             } catch (\Exception $e) {
                  return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
             }
+    }
+
+    public function setTravellerNames($data, $arrKey, $inquiryId, $quoteId){
+
+        foreach ($data[$arrKey] as $key => $value) {
+            BookingTravellerDetails::create([
+                'booking_inquiries_id' => $inquiryId,
+                'client_id' => Auth::user()->client_id,
+                'name' => $value['name'],
+                'age' => $value['age'],
+                'quote_id' => $quoteId,
+                'user_id' => Auth::user()->id,
+            ]);
+        }        
     }
 }

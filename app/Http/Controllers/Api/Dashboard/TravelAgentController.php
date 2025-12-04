@@ -19,7 +19,7 @@ class TravelAgentController extends Controller
             'data' => [
                 'this_month_mybooking' => BookingInquiries::Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')
                 ->Join('booking_status as b', 'b.id', '=', 'a.status_id')
-                ->where(['booking_inquiries.requester_id' => Auth::user()->id, 'a.is_active' => 1])->whereMonth('booking_inquiries.created_at', now()->month)->whereIn('b.id', [11,12,13,14])->count(),
+                ->where(['booking_inquiries.requester_id' => Auth::user()->id, 'a.is_active' => 1])->whereMonth('booking_inquiries.created_at', now()->month)->count(),//whereIn('b.id', [11,12,13,14])->count(),
 
                 'my_booking_active_clients' => 0,
 
@@ -34,7 +34,7 @@ class TravelAgentController extends Controller
                 'confirmed_booking_this_week' => BookingInquiries::Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')
                 ->Join('booking_status as b', 'b.id', '=', 'a.status_id')
                 ->whereBetween('a.created_at', [now()->startOfWeek(), now()->endOfWeek()])
-                ->where(['booking_inquiries.requester_id' => Auth::user()->id, 'a.is_active' => 1])->whereMonth('booking_inquiries.created_at', now()->month)->whereIn('b.id', [11])->count(),
+                ->where(['booking_inquiries.requester_id' => Auth::user()->id, 'a.is_active' => 1])->whereMonth('a.created_at', now()->month)->whereIn('b.id', [11])->groupBy('a.booking_inquiries_id')->count(),
 
                 'earning' => 0,
             ],
