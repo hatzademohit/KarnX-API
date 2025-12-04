@@ -38,8 +38,10 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLink']);
 Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
 Route::post('/activate-account', [UserActivateAccountController::class, 'activateAccount']);
+// Route::get('/auth-check', [AuthController::class, 'authCheck']);
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/check-token', [AuthController::class, 'checkToken']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
     Route::apiResource('profile', UserProfileController::class);

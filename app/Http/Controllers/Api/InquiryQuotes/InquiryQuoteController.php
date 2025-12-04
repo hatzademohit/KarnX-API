@@ -207,7 +207,7 @@ class InquiryQuoteController extends Controller
                 $quote = InquiryQuoteDetails::find($qId); 
                 $quote->is_selected = 'approved';
                 $quote->save();
-                //setInquiryStatuses($inquiryId, [17, 17, 17], [Auth::user()->client_id, $quote->client_id, getDefualtClient()]); //selected sts Id
+                setInquiryStatuses($inquiryId, [17, 17, 17], [Auth::user()->client_id, $quote->client_id, getDefualtClient()]); //selected sts Id
                 return response()->json(['status' => true, 'message' => 'Quote accepted successfully'], 200);
             } catch (\Exception $e) {
                  return response()->json(['status' => false, 'message' => $e->getMessage()], 500);

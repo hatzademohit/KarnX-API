@@ -25,7 +25,7 @@ class ActivateAccountNotification extends Notification
 
     public function toMail($notifiable)
     {
-        $activationUrl = env('FRONTEND_URL') . "/activate-account?token={$this->user->activation_token}&email={$this->user->email}";
+        $activationUrl = env('FRONTEND_URL') . "activate-account?token={$this->user->activation_token}&email={$this->user->email}";
 
         return (new MailMessage)
             ->subject('Activate Your Account')

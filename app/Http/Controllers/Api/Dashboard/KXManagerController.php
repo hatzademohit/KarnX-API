@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\Dashboard;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\bookingInquiries\BookingInquiries;
+use App\Models\BookingInquiries\BookingInquiries;
 use Illuminate\Support\Facades\Auth;
 use App\Models\FormFieldsData\AirportCities;
 use App\Models\FormFieldsData\AirCraftTypes;

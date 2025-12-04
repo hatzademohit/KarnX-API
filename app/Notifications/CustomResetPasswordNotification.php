@@ -28,7 +28,7 @@ class CustomResetPasswordNotification extends Notification
             ->greeting("Hello {$notifiable->name},") // 👈 personal greeting
             ->line('We received a request to reset your password for your account.')
             ->line('Click the button below to reset your password.')
-            ->action('Reset Password', "{$frontendUrl}/reset-password?token={$this->token}&email={$notifiable->email}")
+            ->action('Reset Password', "{$frontendUrl}reset-password?token={$this->token}&email={$notifiable->email}")
             //->line('This link will expire in 60 minutes.') // 👈 extra info
             ->line('If you did not request a password reset, no further action is required.')
             ->salutation('Regards, \n'. env('MAIL_FROM_NAME'));
