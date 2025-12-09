@@ -15,26 +15,31 @@ class KXManagerController extends Controller
     public function cardCount()
     { 
         $clientDecision = BookingInquiries::Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')->Join('booking_status as b', 'b.id', '=', 'a.status_id')->Join('inquiry_quote_details as iqd', 'iqd.booking_inquiries_id', '=', 'booking_inquiries.id')->where('iqd.is_selected', 'selected')->where(['a.is_active' => 1])->whereIn('b.id', [7]);
-        
+        $newInquiries = BookingInquiries::Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')->Join('booking_status as b', 'b.id', '=', 'a.status_id')->where(['a.is_active' => 1])->whereMonth('booking_inquiries.created_at', now()->month)->whereIn('b.id', [3]);
+
+        $quotePending = BookingInquiries::Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')
+                ->Join('booking_status as b', 'b.id', '=', 'a.status_id')
+                ->where(['a.is_active' => 1])->whereMonth('booking_inquiries.created_at', now()->month)->whereIn('b.id', [4]);
+        $confirmedBooking = BookingInquiries::join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')->join('booking_status as b', 'b.id', '=', 'a.status_id')->where('a.is_active', 1)->whereIn('b.id', [11])->distinct('booking_inquiries.id');
+                                        
         return response()->json([
             'success' => true,
             'data' => [
-                'new_inquiries' => BookingInquiries::Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')
-                ->Join('booking_status as b', 'b.id', '=', 'a.status_id')
-                ->where(['a.is_active' => 1])->whereMonth('booking_inquiries.created_at', now()->month)->whereIn('b.id', [3])->count(),
+                'new_inquiries' => $newInquiries->count(),
+                'new_inquiries_ids' => $newInquiries->select('booking_inquiries.id')->get()->map(function($val){ return $val->id;}),
 
-                'quote_pending' => BookingInquiries::Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')
-                ->Join('booking_status as b', 'b.id', '=', 'a.status_id')
-                ->where(['a.is_active' => 1])->whereMonth('booking_inquiries.created_at', now()->month)->whereIn('b.id', [4])->count(),  
+                'quote_pending' => $quotePending->count(),  
+                'quote_pending_ids' => $quotePending->select('booking_inquiries.id')->get()->map(function($val){ return $val->id;}),  
 
                 'clients_decision' => $clientDecision->count(),
+                'clients_decision_ids' => $clientDecision->select('booking_inquiries.id')->get()->map(function($val){ return $val->id;}),
                 'clients_decision_expiring_soon' => $clientDecision->whereBetween('validate_till', [now(), now()->addDays(8)])->count(),
 
-                'confirmed_booking' => BookingInquiries::Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')
-                ->Join('booking_status as b', 'b.id', '=', 'a.status_id')
-                ->where(['a.is_active' => 1])->whereIn('b.id', [11])->count(),
+                'confirmed_booking' => $confirmedBooking->count('booking_inquiries.id'),
+                'confirmed_booking_ids' => $confirmedBooking->select('booking_inquiries.id')->get()->map(function($val){ return $val->id;}),
 
                 'response_time' => 0,
+                'response_time_ids' => [],
             ],
         ]);
     } 
@@ -121,9 +126,9 @@ class KXManagerController extends Controller
             ->leftJoin('booking_status as b', 'b.id', '=', 'ps.status_id')
             ->leftJoin('clients as c', 'c.id', '=', 'booking_inquiries.manager_id')
             ->select('booking_inquiries.*', 'b.status_name', 'b.id as status_id', 'b.color_code', 'c.name as operator');
-
-        if ($request->has('client_id')) {
-            //$query->where('booking_inquiries.client_id', $request->client_id);
+        
+        if ($request->has('ids')) {
+            $query->whereIn('booking_inquiries.id', explode(',', $request->ids));
         }
 
         if ($request->has('search')) {

@@ -14,33 +14,43 @@ class AircraftOperatorController extends Controller
 {
     public function cardCount()
     { 
+        $assignedInquiry = BookingInquiries::Join('booking_inquiry_operator_assignments as c', 'c.booking_inquiries_id', '=', 'booking_inquiries.id')
+                        ->Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')
+                        ->where('a.is_active', 1)->whereIn('a.status_id', [4])->where('a.user_client_id', Auth::user()->client_id)
+                        ->where('c.operator_id', Auth::user()->client_id);
+        $quotePending = BookingInquiries::Join('booking_inquiry_operator_assignments as c', 'c.booking_inquiries_id', '=', 'booking_inquiries.id')
+                        ->Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')
+                        ->where('a.is_active', 1)->whereIn('a.status_id', [5,8])->where('a.user_client_id', Auth::user()->client_id)
+                        ->where('c.operator_id', Auth::user()->client_id);
+        $upcommingFlights = BookingInquiries::Join('booking_inquiry_operator_assignments as c', 'c.booking_inquiries_id', '=', 'booking_inquiries.id')
+                        ->Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')
+                        ->where('a.is_active', 1)->whereIn('a.status_id', [12])->where('a.user_client_id', Auth::user()->client_id)
+                        ->where('c.operator_id', Auth::user()->client_id);
+        $liveFlights = BookingInquiries::Join('booking_inquiry_operator_assignments as c', 'c.booking_inquiries_id', '=', 'booking_inquiries.id')
+                        ->Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')
+                        ->where('a.is_active', 1)->whereIn('a.status_id', [13])->where('a.user_client_id', Auth::user()->client_id)
+                        ->where('c.operator_id', Auth::user()->client_id);
+        $completedBookings = BookingInquiries::Join('booking_inquiry_operator_assignments as c', 'c.booking_inquiries_id', '=', 'booking_inquiries.id')
+                        ->Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')
+                        ->where('a.is_active', 1)->whereIn('a.status_id', [11,14,15])->where('a.user_client_id', Auth::user()->client_id)
+                        ->where('c.operator_id', Auth::user()->client_id);              
         return response()->json([
             'success' => true,
             'data' => [
-                'assigned_inquiries' => BookingInquiries::Join('booking_inquiry_operator_assignments as c', 'c.booking_inquiries_id', '=', 'booking_inquiries.id')
-                        ->Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')
-                        ->where('a.is_active', 1)->whereIn('a.status_id', [4])->where('a.user_client_id', Auth::user()->client_id)
-                        ->where('c.operator_id', Auth::user()->client_id)->count(),
+                'assigned_inquiries' => $assignedInquiry->count(),
+                'assigned_inquiries_ids' => $assignedInquiry->select('booking_inquiries.id')->get()->map(function($val){ return $val->id;}),
 
-                'quote_pending' => BookingInquiries::Join('booking_inquiry_operator_assignments as c', 'c.booking_inquiries_id', '=', 'booking_inquiries.id')
-                        ->Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')
-                        ->where('a.is_active', 1)->whereIn('a.status_id', [5,8])->where('a.user_client_id', Auth::user()->client_id)
-                        ->where('c.operator_id', Auth::user()->client_id)->count(),
+                'quote_pending' => $quotePending->count(),
+                'quote_pending_ids' => $quotePending->select('booking_inquiries.id')->get()->map(function($val){ return $val->id;}),
 
-                'upcoming_flights' => BookingInquiries::Join('booking_inquiry_operator_assignments as c', 'c.booking_inquiries_id', '=', 'booking_inquiries.id')
-                        ->Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')
-                        ->where('a.is_active', 1)->whereIn('a.status_id', [12])->where('a.user_client_id', Auth::user()->client_id)
-                        ->where('c.operator_id', Auth::user()->client_id)->count(),
+                'upcoming_flights' => $upcommingFlights->count(),
+                'upcoming_flights_ids' => $upcommingFlights->select('booking_inquiries.id')->get()->map(function($val){ return $val->id;}),
 
-                'live_flights' => BookingInquiries::Join('booking_inquiry_operator_assignments as c', 'c.booking_inquiries_id', '=', 'booking_inquiries.id')
-                        ->Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')
-                        ->where('a.is_active', 1)->whereIn('a.status_id', [13])->where('a.user_client_id', Auth::user()->client_id)
-                        ->where('c.operator_id', Auth::user()->client_id)->count(),
+                'live_flights' => $liveFlights->count(),
+                'live_flights_ids' => $liveFlights->select('booking_inquiries.id')->get()->map(function($val){ return $val->id;}),
 
-                'completed_bookings' => BookingInquiries::Join('booking_inquiry_operator_assignments as c', 'c.booking_inquiries_id', '=', 'booking_inquiries.id')
-                        ->Join('booking_inquiry_process_statuses as a', 'a.booking_inquiries_id', '=', 'booking_inquiries.id')
-                        ->where('a.is_active', 1)->whereIn('a.status_id', [11,14,15])->where('a.user_client_id', Auth::user()->client_id)
-                        ->where('c.operator_id', Auth::user()->client_id)->count(),
+                'completed_bookings' => $completedBookings->count(),
+                'completed_bookings_ids' => $completedBookings->select('booking_inquiries.id')->get()->map(function($val){ return $val->id;}),
             ],
         ]);
     }   
@@ -69,9 +79,13 @@ class AircraftOperatorController extends Controller
         })
         ->leftJoin('booking_status as b', 'b.id', '=', 'ps.status_id')
         ->join('booking_inquiry_operator_assignments as c', 'c.booking_inquiries_id', '=', 'booking_inquiries.id')
-        ->select('booking_inquiries.*', 'b.status_name', 'b.id as status_id', 'b.color_code')
-        ->where('c.operator_id', Auth::user()->client_id)
-        ->orderByDesc('booking_inquiries.id');
+        ->select('booking_inquiries.*', 'b.status_name', 'b.id as status_id', 'b.color_code')        
+        ->where('c.operator_id', Auth::user()->client_id);
+
+        if ($request->has('ids')) {
+             $query = $query->whereIn('booking_inquiries.id', explode(',', $request->ids));
+        }
+         $query = $query->orderByDesc('booking_inquiries.id');
         $bookings = $query->get();
         
         // Map to desired format
