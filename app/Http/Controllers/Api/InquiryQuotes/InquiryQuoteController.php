@@ -109,7 +109,7 @@ class InquiryQuoteController extends Controller
             $quote->estimated_flight_time = $estimateTime;
             $quote->save();            
             setInquiryStatuses($data['inquiryId'], [5,6], [Auth::user()->client_id, getDefualtClient()]);
-            return response()->json(['status' => true, 'data' => $upQuote, 'message' => 'Quote saved successfully'], 200);
+            return response()->json(['status' => true, 'data' => $quote, 'message' => 'Quote saved successfully'], 200);
         } catch (\Exception $e) {
             return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
         }

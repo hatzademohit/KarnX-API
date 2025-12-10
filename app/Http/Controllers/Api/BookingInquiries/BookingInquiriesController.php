@@ -144,7 +144,7 @@ class BookingInquiriesController extends Controller
             $data['booking_date'] = date('Y-m-d H:i:s');
 
             $data['trip_type'] = $payload['flightDetails']['trip_type'] ?? '';
-            $data['is_flexible_dates'] = '';//$payload['flightDetails']['is_flexible_dates'] ?? '';
+            $data['is_flexible_dates'] = 0;//$payload['flightDetails']['is_flexible_dates'] ?? '';
             $data['flexible_range'] = '';//$payload['flightDetails']['flexible_range'] ?? '';
 
             $data['passanger_info_adults'] = $payload['passengerInfo']['passanger_info_adults'] ?? '';

@@ -31,7 +31,7 @@ use App\Http\Controllers\Api\InquiryOperators\KXManager\InquiryOperatorsControll
 use App\Http\Controllers\Api\InquiryQuotes\InquiryQuoteController;
 use App\Http\Controllers\Api\FormFieldsData\CancellationPoliciesController;
 use App\Http\Controllers\Api\FormFieldsData\AvailableAmenitiesController;
-
+use App\Http\Controllers\Api\Payment\RazorpayController;
 
 // Public route for user login
 Route::post('/login', [AuthController::class, 'login']);
@@ -123,6 +123,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/approve-quote', [InquiryQuoteController::class, 'approveQuote']);
         Route::post('/accept-quote', [InquiryQuoteController::class, 'acceptQuote']);
         Route::post('/confirm-booking', [InquiryQuoteController::class, 'confirmBooking']);
+    });
+
+    /**Inquiry Quotes Routes */
+    Route::prefix('booking-payment')->group(function () {
+        Route::post('/create-order', [RazorpayController::class, 'createOrder']);
+        Route::post('/verify-payment', [RazorpayController::class, 'verifyPayment']);
     });
 
 });
