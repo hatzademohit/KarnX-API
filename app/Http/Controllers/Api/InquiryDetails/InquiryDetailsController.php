@@ -52,8 +52,10 @@ class InquiryDetailsController extends Controller
                 foreach($flightDetails as $fd){
                     $dep = $fd->departure_location;
                     $arr = $fd->arrival_location;
-                    $dep = AirportCities::find($dep)->code;
-                    $arr = AirportCities::find($arr)->code;
+                    $dep = AirportCities::find($dep);
+                    $dep = $dep->code;//.'('.$dep->airport_name.', '.$dep->city_name.')';
+                    $arr = AirportCities::find($arr);
+                    $arr = $arr->code;//.'('.$arr->airport_name.', '.$arr->city_name.')';
                     // $route[] = $dep . ' → ' . $arr;
                     $depTime = 'NA';
                     $retTime = 'NA'; 
@@ -67,9 +69,12 @@ class InquiryDetailsController extends Controller
                 }                
             }
             // Compose aircraft type
-            $aircraftType = null;
-            if ($item->aircraftPreference && isset($item->aircraftPreference->aircraft_type_id)) {
-                $aircraftType = AirCraftTypes::find($item->aircraftPreference->aircraft_type_id)->name;
+            $aircraftType = [];
+            if ($item->aircraftPreference && isset($item->aircraftPreference)) {
+                foreach($item->aircraftPreference as $val){
+                   
+                   $aircraftType[] =  AirCraftTypes::find($val['aircraft_type_id'])->name;
+                }
             }
             // Client name
             $client = null;
@@ -188,16 +193,16 @@ class InquiryDetailsController extends Controller
                                             }, $documents->toArray()));
                 
             }
-            
+            $clientDetails = Client::where('id', $item->client_id)->first();
             return [
                 'id' => $item->id,
                 'inquiryId' => $item->booking_reference ?? null,
                 'priority' => $priority,
                 'route' => $route,
-                'clientName' => $item->contactInformation->contact_name,
+                'clientName' => $clientDetails->name,
                 'flexible_date_range' => $item->flexible_range ?? 'NA',
-                'clientEmail' => $item->contactInformation->contact_email,
-                'clientPhone' => $item->contactInformation->contact_phone,
+                'clientEmail' => $clientDetails->email,
+                'clientPhone' => $clientDetails->phone,
                 'checkedBag' => $item->checked_bag ?? 0,
                 'carryOnBag' => $item->carry_bag ?? 0,
                 'is_traveling_pets' => $item->is_traveling_pets == 0 ?'No':'Yes',
@@ -205,7 +210,7 @@ class InquiryDetailsController extends Controller
                 'created_on' => date("F d, Y \a\\t h:i A", strtotime($item->created_at)),
                 //'date' => $formattedDate,
                 'passangers' => $item->passenger_info_total ?? null,
-                'aircraft' => $aircraftType,
+                'aircraft' => implode(', ', $aircraftType),
                 'traveling_purpose' => $travel_purpose,
                 'assign' => $assign,
                 'status' => $status,

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\FormFieldsData\AirportCities;
 use App\Models\FormFieldsData\AirCraftTypes;
 use Carbon\Carbon;
+use App\Models\Client;
 
 class KXManagerController extends Controller
 {
@@ -147,16 +148,25 @@ class KXManagerController extends Controller
                 $dep = AirportCities::find($dep)->code;
                 $arr = AirportCities::find($arr)->code;
                 $route = $dep . ' → ' . $arr;
+                if($item->trip_type === 'multi_city'){
+                    $arr1 = $item->flightDetails[1]->arrival_location;
+                    $arr1 = AirportCities::find($arr1)->code;
+                    $route = $dep . ' → ' . $arr. ' → ' . $arr1;
+                }else if($item->trip_type === 'round_trip'){
+                    $route = $dep . ' ⇄ ' . $arr;
+                }
             }
             // Compose aircraft type
-            $aircraftType = null;
-            if ($item->aircraftPreference && isset($item->aircraftPreference->aircraft_type_id)) {
-                $aircraftType = AirCraftTypes::find($item->aircraftPreference->aircraft_type_id)->name;
+            $aircraftType = [];
+            if ($item->aircraftPreference && isset($item->aircraftPreference)) {
+                foreach($item->aircraftPreference as $val){
+                   $aircraftType[] =  AirCraftTypes::find($val['aircraft_type_id'])->name;
+                }
             }
             // Client name
             $client = null;
-            if(isset($item->contactInformation->contact_name)){
-                $client = $item->contactInformation->contact_name;
+            if(isset($item->client_id)){
+                $client = Client::where('id', $item->client_id)->first('name')->name;
             }
             
             // Status actions
@@ -193,7 +203,7 @@ class KXManagerController extends Controller
                 'created_on' => date("F d, Y \a\\t h:i A", strtotime($item->created_at)),
                 'date' => $formattedDate,
                 'passangers' => $item->passenger_info_total ?? null,
-                'aircraft' => $aircraftType,
+                'aircraft' => implode(', ', $aircraftType),
                 'status' => $status,
                 'status_color' => $status_color,
                 'operators' => $item->assigndOperators->count().'/'.$item->assignedQuotes->count().' responses',

@@ -21,7 +21,7 @@ class BookingInquiries extends Model
 
     public function petTravels() { return $this->hasMany(BookingInquiriesPetTravel::class); }
     public function medicalAssistance() { return $this->hasOne(BookingInquiriesMedicalAssistance::class); }
-    public function aircraftPreference() { return $this->hasOne(BookingInquiriesAircraftPreference::class); }
+    public function aircraftPreference() { return $this->hasMany(BookingInquiriesAircraftPreference::class); }
     public function crewRequirements() { return $this->hasOne(BookingInquiriesCrewRequirement::class); }
 
     public function cateringServices() { return $this->hasOne(BookingInquiriesCateringService::class); }

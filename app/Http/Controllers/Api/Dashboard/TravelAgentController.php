@@ -108,7 +108,6 @@ class TravelAgentController extends Controller
         }
 
         $bookings = $query->orderByDesc('booking_inquiries.id')->get();
-        
         // Map to desired format
         $inquiries = $bookings->map(function ($item) {
             // Compose route
@@ -118,12 +117,23 @@ class TravelAgentController extends Controller
                 $arr = $item->flightDetails[0]->arrival_location;
                 $dep = AirportCities::find($dep)->code;
                 $arr = AirportCities::find($arr)->code;
+                
                 $route = $dep . ' → ' . $arr;
+                if($item->trip_type === 'multi_city'){
+                    $arr1 = $item->flightDetails[1]->arrival_location;
+                    $arr1 = AirportCities::find($arr1)->code;
+                    $route = $dep . ' → ' . $arr. ' → ' . $arr1;
+                }else if($item->trip_type === 'round_trip'){
+                    $route = $dep . ' ⇄ ' . $arr;
+                }
+                
             }
             // Compose aircraft type
-            $aircraftType = null;
-            if ($item->aircraftPreference && isset($item->aircraftPreference->aircraft_type_id)) {
-                $aircraftType = AirCraftTypes::find($item->aircraftPreference->aircraft_type_id)->name;
+            $aircraftType = [];
+            if ($item->aircraftPreference && isset($item->aircraftPreference)) {
+                foreach($item->aircraftPreference as $val){
+                   $aircraftType[] =  AirCraftTypes::find($val['aircraft_type_id'])->name;
+                }
             }
             // Client name
             $client = null;
@@ -164,7 +174,7 @@ class TravelAgentController extends Controller
                 'created_on' => date("F d, Y \a\\t h:i A", strtotime($item->created_at)),
                 'date' => $formattedDate,
                 'passangers' => $item->passenger_info_total ?? null,
-                'aircraft' => $aircraftType,
+                'aircraft' => implode(', ', $aircraftType),
                 'status' => $status,
                 'status_color' => $status_color,
                 'operator' => $operatorName,

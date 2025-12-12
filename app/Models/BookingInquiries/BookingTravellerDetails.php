@@ -10,6 +10,6 @@ class BookingTravellerDetails extends Model
     use BaseModelLoggingTrait;
     protected $table = 'traveller_persons_details';
     protected $fillable = [
-        'booking_inquiries_id', 'client_id', 'quote_id', 'user_id', 'name', 'age'
+        'booking_inquiries_id', 'client_id', 'quote_id', 'user_id', 'passenger_id', 'selected'
     ];
 }

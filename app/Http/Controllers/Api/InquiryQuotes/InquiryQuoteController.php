@@ -15,6 +15,7 @@ use App\Models\BookingInquiries\BookingTravellerDetails;
 use App\Models\BookingInquiries\BookingTravellerContactDetails;
 use App\Models\InquiryQuoteFlightTime;
 use Carbon\Carbon;
+use App\Models\TravellerPassangerData;
 
 class InquiryQuoteController extends Controller
 {
@@ -148,7 +149,7 @@ class InquiryQuoteController extends Controller
                     $quotes = $quotes->whereIn('is_selected', ['selected', 'approved']);
                 }
             $quotes = $quotes->orderBy('total', 'asc')->get();  
-           
+
             $quotes[0]['rating'] = 4.5;       
             $data['quotes'] = $quotes;
             $notRejectedQuotes = InquiryQuoteDetails::withRelations()->where($lookup);
@@ -277,11 +278,20 @@ class InquiryQuoteController extends Controller
     public function setTravellerNames($data, $arrKey, $inquiryId, $quoteId){
 
         foreach ($data[$arrKey] as $key => $value) {
+            $id = $value['id'];
+            if($value['id'] === 0){
+                $id = TravellerPassangerData::insertGetId([
+                    'client_id' => Auth::user()->client_id,
+                    'user_id' => Auth::user()->id,
+                    'name' => $value['name'],
+                    'age' => $value['age'],
+                ]);
+                
+            }
             BookingTravellerDetails::create([
                 'booking_inquiries_id' => $inquiryId,
                 'client_id' => Auth::user()->client_id,
-                'name' => $value['name'],
-                'age' => $value['age'],
+                'passenger_id' => $id,
                 'quote_id' => $quoteId,
                 'user_id' => Auth::user()->id,
             ]);

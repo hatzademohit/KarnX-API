@@ -24,7 +24,6 @@ class RazorpayController extends Controller
 
     public function verifyPayment(Request $request)
     {
-        return response()->json(['status' => 'ddd', 'data' => $request->all()]);
         $signature = $request->razorpay_signature;
 
         $generated_signature = hash_hmac(

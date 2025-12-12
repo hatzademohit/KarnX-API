@@ -132,6 +132,7 @@ class BookingInquiriesController extends Controller
      */
     public function store(Request $request)
     {        
+       
        DB::beginTransaction();
         try {
             $payload = json_decode($request->input('payload'), true);
@@ -272,7 +273,9 @@ class BookingInquiriesController extends Controller
         }
 
         if ($request->has('payload.passengerInfo') && $request->input('payload.passengerInfo.is_traveling_pets') === true) {
-            $booking->petTravels()->create($request->input('payload.passengerInfo.pet_travels'));
+            if(!empty($request->input('payload.passengerInfo.pet_travels.pet_type'))){
+                $booking->petTravels()->create($request->input('payload.passengerInfo.pet_travels'));
+            }            
         }
         
         if ($request->has('payload.passengerInfo') && $request->input('payload.passengerInfo.is_medical_assistance_req') === true) {
@@ -322,7 +325,7 @@ class BookingInquiriesController extends Controller
             }
         }
 
-        if ($request->has('payload.contactInfo') && $request->input('payload.contactInfo.contact_information') !== null) {
+        if ($request->has('payload.contactInfo') && $request->input('payload.contactInfo.contact_information') !== null && $request->input('payload.contactInfo.contact_information.special_requirements') != '') {
             $booking->contactInformation()->create($request->input('payload.contactInfo.contact_information'));
         }      
 

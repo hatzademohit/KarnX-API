@@ -4,6 +4,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use App\Traits\BaseModelLoggingTrait;
+use App\Models\BookingInquiries\BookingInquiriesFlightDetail;
 
 class InquiryQuoteFlightTime extends Model 
 {
@@ -16,4 +17,9 @@ class InquiryQuoteFlightTime extends Model
         'departure_date_time',
         'flight_duration',
     ];
+
+    public function depArriveLocation(){
+        return $this->belongsTo(BookingInquiriesFlightDetail::class, 'booking_inquiries_flight_location_id');
+    }
+    
 }

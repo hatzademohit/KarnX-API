@@ -51,6 +51,9 @@ class InquiryQuoteDetails extends Model
         return $this->belongsTo(CancellationPolicies::class, 'cancellation_policy_id');
     }
 
+    public function inquiryQuoteFlightTime(){
+        return $this->hasMany(InquiryQuoteFlightTime::class, 'quote_id');
+    }
     // Accessor to resolve comma-separated IDs into models
     public function getAvailableAmenitiesAttribute(): Collection
     {
@@ -75,6 +78,8 @@ class InquiryQuoteDetails extends Model
             'client',
             'aircraft',
             'cancelationPolicy',
+            'inquiryQuoteFlightTime.depArriveLocation.airportDepartureLocation',
+            'inquiryQuoteFlightTime.depArriveLocation.airportArrivalLocation',
         ]);
     }
 }
