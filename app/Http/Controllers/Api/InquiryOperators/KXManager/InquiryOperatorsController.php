@@ -14,17 +14,27 @@ class InquiryOperatorsController extends Controller
 {
     public function getOperators(Request $request)
     {
-        
         try{
-           $query = Client::where(['is_active' => 1, 'type' => 'Aircraft Operator'])->select('clients.id', 'clients.name',  DB::raw("4.8 as rating"),
+            $assignedOperators = BookingInquiriesAssignOperators::where('booking_inquiries_id', $request->inquiry_id)->select('operator_id')->get()->map(function ($item) {
+                return $item->operator_id;
+            });
+
+            
+           $query = Client::where(['is_active' => 1, 'type' => 'Aircraft Operator'])
+            ->select('clients.id', 'clients.name',  DB::raw("4.8 as rating"),
             DB::raw("2587 as flights"),
             DB::raw("'< 2 hours' as duration"),
             DB::raw("JSON_ARRAY('Luxury Travel', 'Group Charters', 'VIP Transport') as tags"), 
-            DB::raw('(SELECT count(a. id) FROM assets AS a WHERE a.client_id = clients.id AND a.is_active = 1) as aircraft'))->orderBy('name', 'asc')->get()->map(function ($item) {
+            DB::raw('(SELECT count(a. id) FROM assets AS a WHERE a.client_id = clients.id AND a.is_active = 1) as aircraft'));
+            if($assignedOperators){
+                $query = $query->whereNotIn('clients.id', $assignedOperators);
+            }
+            
+            $query = $query->orderBy('clients.name', 'asc')->get()            
+            ->map(function ($item) {
                 $item->tags = json_decode($item->tags);
                 return $item;
             });
-            
             return response()->json(['status' => true, 'data' => $query, 'message' => 'Operators fetched successfully'], 200);
         }catch (\Exception $e){
             return response()->json(['status' => false, 'data' => [], 'message' => 'Error fetching operators'], 500);
