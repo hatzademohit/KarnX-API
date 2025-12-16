@@ -74,27 +74,27 @@ class InquiryQuoteController extends Controller
             ];
            
             $payload = [
-                'aircraft_id' => $data['aircraft'],
-                'estimated_flight_time' => 0, // $data['estimatedFlightTime'] when available
-                'base_fare' => $data['baseFare'],
-                'fluel_cost' => $data['fuel'],
-                'taxes_fees' => $data['taxes'],
-                'crew_fees' => $data['crewFees'],
-                'handling_fees' => $data['handlingFees'],
-                'catering_fees' => $data['catering'],
-                'total' => $data['totalAmount'],
-                'validate_till' => date('Y-m-d', strtotime($data['quoteValidUntil'])),
-                'cancellation_policy_id' => $data['cancellationPolicy'],
-                'special_offers_promotions' => $data['specialOffers']??'',
-                'additional_notes' => $data['addtionalNotes']??'',
-                'amenities_ids' => implode(',', $data['amenities']),
+                'aircraft_id' => $data['aircraft_id'],
+                'estimated_flight_time' => 0, // $data['estimated_flight_time'] when available
+                'base_fare' => $data['base_fare'],
+                'fluel_cost' => $data['fluel_cost'],
+                'taxes_fees' => $data['taxes_fees'],
+                'crew_fees' => $data['crew_fees'],
+                'handling_fees' => $data['handling_fees'],
+                'catering_fees' => $data['catering_fees'],
+                'total' => $data['total'],
+                'validate_till' => date('Y-m-d', strtotime($data['validate_till'])),
+                'cancellation_policy_id' => $data['cancellation_policy_id'],
+                'special_offers_promotions' => $data['special_offers_promotions']??'',
+                'additional_notes' => $data['additional_notes']??'',
+                'amenities_ids' => implode(',', $data['amenities_ids']),
             ];
             
             // Eloquent updateOrCreate
             $quote = InquiryQuoteDetails::updateOrCreate($lookup, $payload);
             $estimateTime = 0;
             foreach($data['estimate'] as $key => $value) {                
-                $dt = Carbon::parse($value['estimatedFlightTime'])->setTimezone(env('TIME_ZONE'));               
+                $dt = Carbon::parse($value['estimated_flight_time'])->setTimezone(env('TIME_ZONE'));               
                 $minutes = ($dt->hour * 60) + $dt->minute;
                 $lookup1 = [
                     'booking_inquiries_id' => $data['inquiryId'],
@@ -102,7 +102,7 @@ class InquiryQuoteController extends Controller
                     'booking_inquiries_flight_location_id' => $value['flight_details_id'],
                 ];
                 InquiryQuoteFlightTime::updateOrCreate($lookup1, [
-                    'departure_date_time' => date('Y-m-d H:i:s', strtotime($value['departureArrivalDateTime'])),
+                    'departure_date_time' => date('Y-m-d H:i:s', strtotime($value['departure_time'])),
                     'flight_duration' => $minutes,
                 ]);
                 $estimateTime += $minutes;
