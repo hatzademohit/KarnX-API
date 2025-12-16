@@ -109,10 +109,11 @@ class TravelAgentController extends Controller
 
         $bookings = $query->orderByDesc('booking_inquiries.id')->get();
         // Map to desired format
+       
         $inquiries = $bookings->map(function ($item) {
             // Compose route
-            $route = null;
-            if ($item->flightDetails) {
+            $route = null; $formattedDate = null;
+            if (count($item->flightDetails) > 0) {
                 $dep = $item->flightDetails[0]->departure_location;
                 $arr = $item->flightDetails[0]->arrival_location;
                 $dep = AirportCities::find($dep)->code;
@@ -126,6 +127,8 @@ class TravelAgentController extends Controller
                 }else if($item->trip_type === 'round_trip'){
                     $route = $dep . ' ⇄ ' . $arr;
                 }
+
+                $formattedDate = $item->flightDetails[0]->departure_time !== null ? date('F d, Y', strtotime($item->flightDetails[0]->departure_time)) : null;
                 
             }
             // Compose aircraft type
@@ -149,11 +152,7 @@ class TravelAgentController extends Controller
             }
             
             // Date formatting
-            $bookingDate = $item->booking_date ? date('M/d/Y', strtotime($item->booking_date)) : null;
-            $formattedDate = null;
-            if($item->flightDetails){
-                $formattedDate = $item->flightDetails[0]->departure_time !== null ? date('F d, Y', strtotime($item->flightDetails[0]->departure_time)) : null;
-            }
+            $bookingDate = $item->booking_date ? date('M/d/Y', strtotime($item->booking_date)) : null;            
             $quoteValue = $item->assignedQuotes->whereIn('is_selected', ['selected','approved'])->first();
             $quoteAmt = '-'; $operatorName = '-';
             if($quoteValue){

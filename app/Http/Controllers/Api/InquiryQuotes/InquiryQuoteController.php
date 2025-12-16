@@ -117,12 +117,18 @@ class InquiryQuoteController extends Controller
     }
 
     public function editQuote(Request $request, $inquiryId){
+       
         try {
             $lookup = [
                 'booking_inquiries_id' => $inquiryId,
                 'client_id' => Auth::user()->client_id,                
             ];        
-            $quote = InquiryQuoteDetails::where($lookup)->first();
+            $quote = InquiryQuoteDetails::with(['client',
+            'aircraft',
+            'cancelationPolicy',
+            'inquiryQuoteFlightTime.depArriveLocation.airportDepartureLocation',
+            'inquiryQuoteFlightTime.depArriveLocation.airportArrivalLocation'])
+            ->where($lookup)->first();
             return response()->json(['status' => true, 'data' => $quote, 'message' => 'Quote fetched successfully'], 200);
         } catch (\Exception $e) {
             return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
