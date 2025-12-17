@@ -135,8 +135,9 @@ class AircraftOperatorController extends Controller
 
             $quoteAmt = '-';
             
-            if($item->assignedQuotes->first()){
-                $quoteAmt = number_format($item->assignedQuotes->first()->total);
+            $quote = $item->assignedQuotes->where('client_id', Auth::user()->client_id)->first();           
+            if($quote != null){
+                $quoteAmt = number_format($quote->total);
             }
 
             return [
