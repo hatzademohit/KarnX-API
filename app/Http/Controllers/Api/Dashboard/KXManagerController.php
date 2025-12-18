@@ -55,6 +55,22 @@ class KXManagerController extends Controller
                 'details' => 'DEL → BOM, October 25, 2025 • 4 passengers',
                 'subtitle' => 'Harrison Industries',
             ],
+            [
+                'id' => 2,
+                'icon' => `<Flight color="primary" />`,
+                'title' => 'New inquiry received',
+                'time' => '2 minutes ago',
+                'details' => 'DEL → BOM, October 25, 2025 • 5 passengers',
+                'subtitle' => 'Harrison Industries',
+            ],
+            [
+                'id' => 3,
+                'icon' => `<Flight color="primary" />`,
+                'title' => 'New inquiry received',
+                'time' => '2 minutes ago',
+                'details' => 'DEL → BOM, October 25, 2025 • 3 passengers',
+                'subtitle' => 'Harrison Industries',
+            ],
         ];
         return response()->json([
             'success' => true,
@@ -67,28 +83,98 @@ class KXManagerController extends Controller
         $data = [
             [
                 'id' => 1,
-                'icon' => '',
-                'title' => 'Overdue Operator Response',
-                'details' => 'Premium Jets – 6 hours overdue',
-                'ref' => 'INQ–2024–0842',
-                'priority' => 'High',
-                'bg' => '#F4FBF6',
-            ], 
+                'icon' => 'warning',
+                'title' => 'High Priority',
+                'priority' => 'high',
+                'bg' => '#fef2f2',
+                'color' => '#dc2626',
+                'hover_bg' => '#fee2e2',
+                'border_color' => '#fecaca',
+                'tasks_details' => [
+                    [
+                        'type' => 'High',
+                        'task_name' => 'Overdue Operator Response',
+                        'description' => 'Premium Jets – 6 hours overdue',
+                        'client' => 'Harrison Industries',
+                        'inquiry_number' => 'INQ-2024-0842',
+                        'time_overdue' => '6 hours'
+                    ],
+                    [
+                        'type' => 'High',
+                        'task_name' => 'Critical Quote Pending',
+                        'description' => 'Urgent charter request – response needed',
+                        'client' => 'TechCorp International',
+                        'inquiry_number' => 'INQ-2024-0891',
+                        'time_overdue' => '4 hours'
+                    ],
+                    [
+                        'type' => 'High',
+                        'task_name' => 'Critical Quote Pending',
+                        'description' => 'Urgent charter request – response needed',
+                        'client' => 'TechCorp International',
+                        'inquiry_number' => 'INQ-2024-0891',
+                        'time_overdue' => '4 hours'
+                    ],
+                ],
+            ],
             [
                 'id' => 2,
-                'icon' => '',
-                'title' => 'Quote Expiring Soon',
-                'details' => 'Client decision needed in 1.5 hours',
-                'ref' => 'INQ–2024–0839',
-                'priority' => 'Medium',
-                'bg' => '#F7F7F9',
-            ], 
+                'icon' => 'info',
+                'title' => 'Medium Priority',
+                'priority' => 'medium',
+                'bg' => '#fff7ed',
+                'color' => '#f97316',
+                'hover_bg' => '#ffedd5',
+                'border_color' => '#fed7aa',
+                'tasks_details' => [
+                    [
+                        'type' => 'Medium',
+                        'task_name' => 'Quote Expiring Soon',
+                        'description' => 'Client decision needed in 1.5 hours',
+                        'client' => 'Global Ventures',
+                        'inquiry_number' => 'INQ-2024-0839',
+                        'time_overdue' => '1.5 hours'
+                    ],
+                    [
+                        'type' => 'Medium',
+                        'task_name' => 'Follow-up Required',
+                        'description' => 'Client requested additional aircraft options',
+                        'client' => 'Meridian Group',
+                        'inquiry_number' => 'INQ-2024-0856',
+                        'time_overdue' => '3 hours'
+                    ],
+                ],
+            ],
+            [
+                'id' => 3,
+                'icon' => 'info',
+                'title' => 'Low Priority',
+                'priority' => 'low',
+                'bg' => '#eff6ff',
+                'color' => '#3b82f6',
+                'hover_bg' => '#dbeafe',
+                'border_color' => '#bfdbfe',
+                'tasks_details' => [
+                    [
+                        'type' => 'Low',
+                        'task_name' => 'Standard Quote Pending',
+                        'description' => 'Regular follow-up scheduled',
+                        'client' => 'Pacific Enterprises',
+                        'inquiry_number' => 'INQ-2024-0874',
+                        'time_overdue' => '8 hours'
+                    ],
+                ],
+            ],
+        ];
+        $total_task = [
+            'total_pending_task' => 10,
         ];
         $highPriorityCount = collect($data)->whereStrict('priority', 'High')->count();
         return response()->json([
             'success' => true,
             'data' => $data,
             'priorityCount' => $highPriorityCount. ' High Priority', // get count of high priority task only
+            'total_task' => $total_task,
         ]);
     }
 
