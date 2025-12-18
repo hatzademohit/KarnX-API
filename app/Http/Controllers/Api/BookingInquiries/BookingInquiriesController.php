@@ -138,7 +138,7 @@ class BookingInquiriesController extends Controller
             $payload = json_decode($request->input('payload'), true);
             $data['requester_id'] = auth()->user()->id;
             $data['client_id'] = auth()->user()->client_id;
-            $data['booking_reference'] = 'BQ-REF-' . str_pad(BookingInquiries::max('id') + 1, 5, '0', STR_PAD_LEFT);
+            $data['booking_reference'] = 'INQ-'.date('Ym').'-'. str_pad(BookingInquiries::max('id') + 1, STR_PAD_LEFT);
             $data['is_confirmed'] = 0;
             $data['status_id'] = 1;
             $data['remarks'] = '';
