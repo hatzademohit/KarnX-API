@@ -10,6 +10,7 @@ use App\Models\FormFieldsData\AirportCities;
 use App\Models\FormFieldsData\AirCraftTypes;
 use Carbon\Carbon;
 use App\Models\Client;
+use App\Models\User;
 
 class KXManagerController extends Controller
 {
@@ -46,35 +47,111 @@ class KXManagerController extends Controller
     } 
 
     public function getActivityTimeline(){
-        $data = [
-            [
-                'id' => 1,
+
+        $latestPerBooking = \DB::table('booking_inquiry_process_statuses as a')
+        ->join(
+        \DB::raw('(
+            SELECT booking_inquiries_id, MAX(id) AS max_id
+            FROM booking_inquiry_process_statuses
+            WHERE is_active = 1 AND user_client_id = ' . (int) Auth::user()->client_id . ' AND status_id in (3, 6, 19)
+            GROUP BY booking_inquiries_id
+        ) latest'),
+        function ($join) {
+            $join->on('latest.max_id', '=', 'a.id');
+        }
+        )
+        ->select('a.booking_inquiries_id', 'a.status_id', 'a.updated_by', 'a.created_at');
+        
+        $query = BookingInquiries::with([
+                'flightDetails',
+                'aircraftPreference',
+                'contactInformation',
+                'cateringServices',
+                'crewRequirements',
+                'medicalAssistance',
+                'petTravels',
+                'documents',
+                'assigndOperators',
+                'assignedQuotes'
+            ])
+            ->leftJoinSub($latestPerBooking, 'ps', function ($join) {
+                $join->on('ps.booking_inquiries_id', '=', 'booking_inquiries.id');
+            })
+            ->leftJoin('booking_status as b', 'b.id', '=', 'ps.status_id')
+            ->leftJoin('clients as c', 'c.id', '=', 'booking_inquiries.manager_id')
+            ->select('booking_inquiries.*', 'b.status_name', 'b.id as status_id', 'b.color_code', 'c.name as operator', 'ps.updated_by', 'ps.created_at as status_added_date');
+        
+        $bookings = $query->orderByDesc('ps.created_at')->get();
+       
+        // Map to desired format
+        $data = $bookings->map(function ($item) {
+            // Compose route
+            $route = null;
+            if ($item->flightDetails) {
+                $dep = $item->flightDetails[0]->departure_location;
+                $arr = $item->flightDetails[0]->arrival_location;
+                $dep = AirportCities::find($dep)->code;
+                $arr = AirportCities::find($arr)->code;
+                $route = $dep . ' → ' . $arr;
+                if($item->trip_type === 'multi_city'){
+                    $arr1 = $item->flightDetails[1]->arrival_location;
+                    $arr1 = AirportCities::find($arr1)->code;
+                    $route = $dep . ' → ' . $arr. ' → ' . $arr1;
+                }else if($item->trip_type === 'round_trip'){
+                    $route = $dep . ' ⇄ ' . $arr;
+                }
+            }
+            
+            // Client name
+            $client = null;
+            if(isset($item->updated_by)){
+                $client = User::find($item->updated_by)->getClient()->name;
+            }
+
+            // Status actions
+            $status = ''; $status_color = '';
+            if ($item->status_name) {
+                $status = $item->status_name;
+                $status_color = $item->color_code;
+            }
+            
+            // Date formatting
+            $formattedDate = null;
+            if($item->flightDetails){
+                $formattedDate = $item->flightDetails[0]->departure_time !== null ? date('F d, Y', strtotime($item->flightDetails[0]->departure_time)) : null;
+            }
+            
+            $past = Carbon::parse($item->status_added_date);
+            $now  = Carbon::now();
+            $diff = Carbon::parse($past)->diffForHumans(['parts' => 2, 'short' => true,]);
+            if($status != ''){
+                $title = [
+                    3 => 'New inquiry received', 
+                    6 => 'Quote received - '. $item->assigndOperators->count().'/'.$item->assignedQuotes->count(), 
+                    19 => 'Re-quote request from client', 
+                ];
+                return [
+                'id' => $item->id,
+                'inquiryId' => $item->booking_reference ?? null,
                 'icon' => `<Flight color="primary" />`,
-                'title' => 'New inquiry received',
-                'time' => '2 minutes ago',
-                'details' => 'DEL → BOM, October 25, 2025 • 4 passengers',
-                'subtitle' => 'Harrison Industries',
-            ],
-            [
-                'id' => 2,
-                'icon' => `<Flight color="primary" />`,
-                'title' => 'New inquiry received',
-                'time' => '2 minutes ago',
-                'details' => 'DEL → BOM, October 25, 2025 • 5 passengers',
-                'subtitle' => 'Harrison Industries',
-            ],
-            [
-                'id' => 3,
-                'icon' => `<Flight color="primary" />`,
-                'title' => 'New inquiry received',
-                'time' => '2 minutes ago',
-                'details' => 'DEL → BOM, October 25, 2025 • 3 passengers',
-                'subtitle' => 'Harrison Industries',
-            ],
-        ];
+                'title' => $title[$item->status_id],
+                'time' => $diff,
+                'details' => $route.' • '.$formattedDate.' • '.$item->passenger_info_total.' passenger(s)',
+                'subtitle' => $client,
+                'status' => $status,
+                'status_color' => $status_color,
+                'created_on' => date("F d, Y \a\\t h:i A", strtotime($item->created_at)),
+                'status_id' => $item->status_id,
+                'quote_received' => $item->assignedQuotes->count() ?? 0,
+                'operator_assigned' => $item->assigndOperators->count() ?? 0,
+            ];
+            }
+            
+        })->toArray();
+
         return response()->json([
             'success' => true,
-            'data' => $data,
+            'data' => array_filter($data),
         ]);
     }
 

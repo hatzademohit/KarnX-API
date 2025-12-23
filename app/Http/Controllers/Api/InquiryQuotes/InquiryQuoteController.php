@@ -87,7 +87,7 @@ class InquiryQuoteController extends Controller
                 'cancellation_policy_id' => $data['cancellation_policy_id'],
                 'special_offers_promotions' => $data['special_offers_promotions']??'',
                 'additional_notes' => $data['additional_notes']??'',
-                'amenities_ids' => implode(',', $data['amenities_ids']),
+                'amenities_ids' => implode(',', $data['amenities_ids'] ?? []),
             ];
             
             // Eloquent updateOrCreate
@@ -235,10 +235,30 @@ class InquiryQuoteController extends Controller
                 $quote->is_selected = 'approved';
                 $quote->save();
                 setInquiryStatuses($inquiryId, [17, 17, 17], [Auth::user()->client_id, $quote->client_id, getDefualtClient()]); //selected sts Id
-                return response()->json(['status' => true, 'message' => 'Quote accepted successfully'], 200);
+                $dataSts = BookingStatus::where(['id' => 17])->first();
+                return response()->json(['status' => true, 'data' => $dataSts, 'message' => 'Quote accepted successfully'], 200);
             } catch (\Exception $e) {
                  return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
             }
+    }
+
+    public function rejectReQuote(Request $request){
+        try {
+            $data = $request->all();
+            $quote = InquiryQuoteDetails::find($data['quoteId']);
+            //$quote->is_selected = 'rejected';
+            $quote->rejected_reason = $data['message'];
+            $quote->save();
+            if($data['action'] == 'rejected'){
+                setInquiryStatuses($data['inquiryId'], [18, 18], [Auth::user()->client_id, getDefualtClient()]);//rejected sts Id
+                return response()->json(['status' => true, 'message' => 'Quote rejected successfully'], 200);
+            }else if($data['action'] == 'requote'){
+                setInquiryStatuses($data['inquiryId'], [19, 19], [Auth::user()->client_id, getDefualtClient()]);//rejected sts Id
+                return response()->json(['status' => true, 'message' => 'The quotation has been sent for revision'], 200);
+            }           
+        } catch (\Exception $e) {
+            return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 
     public function confirmBooking(Request $request){

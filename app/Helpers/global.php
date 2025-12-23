@@ -1,6 +1,8 @@
 <?php
 use App\Models\Client;
 use App\Models\BookingInquiries\BookingInquiriesStatuses;
+use Illuminate\Support\Facades\Auth;
+
 
 function getDefualtClient()
 {
@@ -15,6 +17,7 @@ function setInquiryStatuses($inquiry_id, $statusIds, $toIds)
             'booking_inquiries_id' => $inquiry_id,
             'status_id' => $statusIds[$key],
             'user_client_id' => $usr,
+            'updated_by' => Auth::user()->id,
         ]);
 
         if($isInserted){

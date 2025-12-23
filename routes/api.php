@@ -124,6 +124,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/approve-quote', [InquiryQuoteController::class, 'approveQuote']);
         Route::post('/accept-quote', [InquiryQuoteController::class, 'acceptQuote']);
         Route::post('/confirm-booking', [InquiryQuoteController::class, 'confirmBooking']);
+        Route::post('/agent-reject-requote-qute', [InquiryQuoteController::class, 'rejectReQuote']);
     });
 
     /**Inquiry Booking Travellers Routes */

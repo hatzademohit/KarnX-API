@@ -65,4 +65,10 @@ class User extends Authenticatable
     {
         $this->notify(new CustomResetPasswordNotification($token));
     }   
+
+    /**here should be return the role of the user */
+    public function getClient()
+    {
+        return Client::find($this->client_id);
+    }
 }

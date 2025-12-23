@@ -10,6 +10,6 @@ class BookingInquiriesStatuses extends Model
     use BaseModelLoggingTrait;
     protected $table = 'booking_inquiry_process_statuses';
     protected $fillable = [
-        'booking_inquiries_id', 'user_client_id', 'status_id'
+        'booking_inquiries_id', 'user_client_id', 'status_id', 'updated_by'
     ];
 }
