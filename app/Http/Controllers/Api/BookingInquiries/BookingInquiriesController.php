@@ -176,13 +176,15 @@ class BookingInquiriesController extends Controller
                 $defaultClient = getDefualtClient();
                 $forUser = [$user, $defaultClient];
                 $byStatus = [2, 3];
-                foreach ($forUser as $key => $usr) {
-                    BookingInquiriesStatuses::create([
-                        'booking_inquiries_id' => $booking->id,
-                        'status_id' => $byStatus[$key], //Requested
-                        'user_client_id' => $usr,
-                    ]);
-                }
+                setInquiryStatuses($booking->id, $byStatus, $forUser);
+                // foreach ($forUser as $key => $usr) {
+                //     BookingInquiriesStatuses::create([
+                //         'booking_inquiries_id' => $booking->id,
+                //         'status_id' => $byStatus[$key], //Requested
+                //         'user_client_id' => $usr,
+                //         'updated_by' => Auth::user()->id,
+                //     ]);
+                // }
             }
             DB::commit();
             return response()->json(['status' => true, 'message' => 'Booking inquiry created successfully', 'data' => $booking->loadRelations()], 201);

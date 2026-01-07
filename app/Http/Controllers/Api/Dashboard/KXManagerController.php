@@ -11,6 +11,7 @@ use App\Models\FormFieldsData\AirCraftTypes;
 use Carbon\Carbon;
 use App\Models\Client;
 use App\Models\User;
+use App\Models\SLAPolicies;
 
 class KXManagerController extends Controller
 {
@@ -156,7 +157,140 @@ class KXManagerController extends Controller
     }
 
     public function getPriorityTask(){
+        $latestPerBooking = \DB::table('booking_inquiry_process_statuses as a')
+        ->join(
+        \DB::raw('(
+            SELECT booking_inquiries_id, MAX(id) AS max_id
+            FROM booking_inquiry_process_statuses
+            WHERE is_active = 1 AND user_client_id = ' . (int) Auth::user()->client_id . ' AND status_id in (3, 6, 19)
+            GROUP BY booking_inquiries_id
+        ) latest'),
+        function ($join) {
+            $join->on('latest.max_id', '=', 'a.id');
+        }
+        )
+        ->select('a.booking_inquiries_id', 'a.status_id', 'a.updated_by', 'a.created_at');
+        
+        $query = BookingInquiries::with([
+                'flightDetails',
+                'aircraftPreference',
+                'contactInformation',
+                'cateringServices',
+                'crewRequirements',
+                'medicalAssistance',
+                'petTravels',
+                'documents',
+                'assigndOperators',
+                'assignedQuotes'
+            ])
+            ->leftJoinSub($latestPerBooking, 'ps', function ($join) {
+                $join->on('ps.booking_inquiries_id', '=', 'booking_inquiries.id');
+            })
+            ->leftJoin('booking_status as b', 'b.id', '=', 'ps.status_id')
+            ->leftJoin('clients as c', 'c.id', '=', 'booking_inquiries.manager_id')
+            ->select('booking_inquiries.*', 'b.status_name', 'b.id as status_id', 'b.color_code', 'c.name as operator', 'ps.updated_by', 'ps.created_at as status_added_date');
+        
+        $bookings = $query->orderByDesc('ps.created_at')->get();
+       
+        $slaPolicies = SLAPolicies::where('task_slug', 'priority_task')->select('name', 'priority', 'response_hours')->orderBy('priority', 'asc')->get();
+        $taskDetails = [];
+        foreach($bookings as $item){
+            // Client name
+            $client = null;
+            if(isset($item->updated_by)){
+                $client = User::find($item->updated_by)->getClient()->name;
+            }
+            // Status actions
+            $status = ''; $status_color = '';
+            if ($item->status_name) {
+                $status = $item->status_name;
+                $status_color = $item->color_code;
+            }
 
+            $deadline = null;
+            if($item->status_id === 3){
+                $deadline = Carbon::parse($item->flightDetails[0]->departure_time);
+            }else if($item->status_id === 6){
+                $quoteEndDate = $item->assignedQuotes->min('validate_till');
+                $deadline = Carbon::parse($quoteEndDate);
+            }else{
+                $deadline = Carbon::parse($item->flightDetails[0]->departure_time);
+            }            
+            $remainingHours = now()->diffInHours($deadline, false);
+            $remainingHours = round($remainingHours);
+            $highRange = $slaPolicies[0]->response_hours;
+            $midiumRange = $slaPolicies[1]->response_hours;
+            $lowRange = $slaPolicies[2]->response_hours;
+            $high = $mid = $low = [];
+            switch ($remainingHours) {
+                case ($remainingHours <= $highRange && $remainingHours > 0):
+                    # HIGH...
+                    $high = array(
+                        'status' => $status,
+                        'status_color' => $status_color,
+                        'created_on' => date("F d, Y \a\\t h:i A", strtotime($item->created_at)),
+                        'status_id' => $item->status_id,
+                        'quote_received' => $item->assignedQuotes->count() ?? 0,
+                        'operator_assigned' => $item->assigndOperators->count() ?? 0,
+
+                        'id' => $item->id,
+                        'type' => 'High',
+                        'task_name' => 'Overdue Operator Response',
+                        'description' => 'Premium Jets',
+                        'client' => $client,
+                        'inquiry_number' => $item->booking_reference,
+                        'time_overdue' => formatHours($remainingHours)         
+                    );
+                    
+                    break;                
+                case ($remainingHours <= $midiumRange && $remainingHours > $midiumRange):
+                    # MEDIUM...
+                    $mid = array(
+                        'status' => $status,
+                        'status_color' => $status_color,
+                        'created_on' => date("F d, Y \a\\t h:i A", strtotime($item->created_at)),
+                        'status_id' => $item->status_id,
+                        'quote_received' => $item->assignedQuotes->count() ?? 0,
+                        'operator_assigned' => $item->assigndOperators->count() ?? 0,
+
+                        'id' => $item->id,
+                        'type' => 'Medium',
+                        'task_name' => 'Overdue Operator Response',
+                        'description' => 'Premium Jets – 6 hours overdue',
+                        'client' => 'Harrison Industries',
+                        'inquiry_number' => $item->booking_reference,
+                        'time_overdue' => formatHours($remainingHours)
+                    
+                    );
+                   
+                    break;
+                case ($remainingHours <= $lowRange && $remainingHours > 0):
+                    # LOW...
+                    $low = array(
+                        'status' => $status,
+                        'status_color' => $status_color,
+                        'created_on' => date("F d, Y \a\\t h:i A", strtotime($item->created_at)),
+                        'status_id' => $item->status_id,
+                        'quote_received' => $item->assignedQuotes->count() ?? 0,
+                        'operator_assigned' => $item->assigndOperators->count() ?? 0,
+                        
+                        'id' => $item->id,
+                        'type' => 'Low',
+                        'task_name' => 'Overdue Operator Response',
+                        'description' => 'Premium Jets – 6 hours overdue',
+                        'client' => 'Harrison Industries',
+                        'inquiry_number' => $item->booking_reference,
+                        'time_overdue' => formatHours($remainingHours)
+                    
+                    );
+                    break;
+            }
+            
+            $taskDetails['high'][] = $high;
+            $taskDetails['mid'][] = $mid;
+            $taskDetails['low'][] = $low;
+        }
+       // dd($taskDetails);
         $data = [
             [
                 'id' => 1,
@@ -167,32 +301,7 @@ class KXManagerController extends Controller
                 'color' => '#dc2626',
                 'hover_bg' => '#fee2e2',
                 'border_color' => '#fecaca',
-                'tasks_details' => [
-                    [
-                        'type' => 'High',
-                        'task_name' => 'Overdue Operator Response',
-                        'description' => 'Premium Jets – 6 hours overdue',
-                        'client' => 'Harrison Industries',
-                        'inquiry_number' => 'INQ-2024-0842',
-                        'time_overdue' => '6 hours'
-                    ],
-                    [
-                        'type' => 'High',
-                        'task_name' => 'Critical Quote Pending',
-                        'description' => 'Urgent charter request – response needed',
-                        'client' => 'TechCorp International',
-                        'inquiry_number' => 'INQ-2024-0891',
-                        'time_overdue' => '4 hours'
-                    ],
-                    [
-                        'type' => 'High',
-                        'task_name' => 'Critical Quote Pending',
-                        'description' => 'Urgent charter request – response needed',
-                        'client' => 'TechCorp International',
-                        'inquiry_number' => 'INQ-2024-0891',
-                        'time_overdue' => '4 hours'
-                    ],
-                ],
+                'tasks_details' => array_values(array_filter($taskDetails['high']))
             ],
             [
                 'id' => 2,
@@ -203,24 +312,7 @@ class KXManagerController extends Controller
                 'color' => '#f97316',
                 'hover_bg' => '#ffedd5',
                 'border_color' => '#fed7aa',
-                'tasks_details' => [
-                    [
-                        'type' => 'Medium',
-                        'task_name' => 'Quote Expiring Soon',
-                        'description' => 'Client decision needed in 1.5 hours',
-                        'client' => 'Global Ventures',
-                        'inquiry_number' => 'INQ-2024-0839',
-                        'time_overdue' => '1.5 hours'
-                    ],
-                    [
-                        'type' => 'Medium',
-                        'task_name' => 'Follow-up Required',
-                        'description' => 'Client requested additional aircraft options',
-                        'client' => 'Meridian Group',
-                        'inquiry_number' => 'INQ-2024-0856',
-                        'time_overdue' => '3 hours'
-                    ],
-                ],
+                'tasks_details' => array_values(array_filter($taskDetails['mid']))
             ],
             [
                 'id' => 3,
@@ -231,26 +323,17 @@ class KXManagerController extends Controller
                 'color' => '#3b82f6',
                 'hover_bg' => '#dbeafe',
                 'border_color' => '#bfdbfe',
-                'tasks_details' => [
-                    [
-                        'type' => 'Low',
-                        'task_name' => 'Standard Quote Pending',
-                        'description' => 'Regular follow-up scheduled',
-                        'client' => 'Pacific Enterprises',
-                        'inquiry_number' => 'INQ-2024-0874',
-                        'time_overdue' => '8 hours'
-                    ],
-                ],
+                'tasks_details' => array_values(array_filter($taskDetails['low']))
             ],
         ];
         $total_task = [
-            'total_pending_task' => 10,
+            'total_pending_task' => count(array_filter($taskDetails['high'])) + count(array_filter($taskDetails['mid'])) + count(array_filter($taskDetails['low'])),
         ];
-        $highPriorityCount = collect($data)->whereStrict('priority', 'High')->count();
+       
         return response()->json([
             'success' => true,
             'data' => $data,
-            'priorityCount' => $highPriorityCount. ' High Priority', // get count of high priority task only
+            //'priorityCount' => $highPriorityCount. ' High Priority', // get count of high priority task only
             'total_task' => $total_task,
         ]);
     }
