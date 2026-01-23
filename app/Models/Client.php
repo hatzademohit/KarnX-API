@@ -31,6 +31,7 @@ class Client extends Model
         'operating_reginons',
         'certifications',
         'specialties',
+        'terms_conditions_policis',
         'is_active',
     ];
 

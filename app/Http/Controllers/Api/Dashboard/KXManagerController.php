@@ -256,8 +256,8 @@ class KXManagerController extends Controller
                         'id' => $item->id,
                         'type' => 'Medium',
                         'task_name' => 'Overdue Operator Response',
-                        'description' => 'Premium Jets – 6 hours overdue',
-                        'client' => 'Harrison Industries',
+                        'description' => 'Premium Jets',
+                        'client' => $client,
                         'inquiry_number' => $item->booking_reference,
                         'time_overdue' => formatHours($remainingHours)
                     
@@ -273,12 +273,12 @@ class KXManagerController extends Controller
                         'status_id' => $item->status_id,
                         'quote_received' => $item->assignedQuotes->count() ?? 0,
                         'operator_assigned' => $item->assigndOperators->count() ?? 0,
-                        
+
                         'id' => $item->id,
                         'type' => 'Low',
                         'task_name' => 'Overdue Operator Response',
-                        'description' => 'Premium Jets – 6 hours overdue',
-                        'client' => 'Harrison Industries',
+                        'description' => 'Premium Jets',
+                        'client' => $client,
                         'inquiry_number' => $item->booking_reference,
                         'time_overdue' => formatHours($remainingHours)
                     
@@ -294,7 +294,7 @@ class KXManagerController extends Controller
         $data = [
             [
                 'id' => 1,
-                'icon' => 'warning',
+                'icon' => 'warning',  
                 'title' => 'High Priority',
                 'priority' => 'high',
                 'bg' => '#fef2f2',

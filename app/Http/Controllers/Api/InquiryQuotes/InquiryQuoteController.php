@@ -16,6 +16,7 @@ use App\Models\BookingInquiries\BookingTravellerContactDetails;
 use App\Models\InquiryQuoteFlightTime;
 use Carbon\Carbon;
 use App\Models\TravellerPassangerData;
+use App\Models\BookingStatus;
 
 class InquiryQuoteController extends Controller
 {
@@ -84,7 +85,7 @@ class InquiryQuoteController extends Controller
                 'catering_fees' => $data['catering_fees'],
                 'total' => $data['total'],
                 'validate_till' => date('Y-m-d', strtotime($data['validate_till'])),
-                'cancellation_policy_id' => $data['cancellation_policy_id'],
+                'cancellation_policy_id' => $data['cancellation_policy_id']??0,
                 'special_offers_promotions' => $data['special_offers_promotions']??'',
                 'additional_notes' => $data['additional_notes']??'',
                 'amenities_ids' => implode(',', $data['amenities_ids'] ?? []),

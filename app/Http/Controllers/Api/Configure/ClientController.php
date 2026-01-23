@@ -119,6 +119,11 @@ class ClientController extends Controller
                 'specialties' => 'nullable|string|max:255',
                 'is_active' => 'boolean'
             ]);
+
+            if ($request->hasFile('terms_conditions_policis')) {
+                $poilicies = $request->file('terms_conditions_policis')->store('terms_conditions_policis', 'public');
+                $validated['terms_conditions_policis'] = $poilicies;
+            }
             $validated['operating_reginons'] = implode(',', array_unique($validated['operating_reginons']));
             $client->update($validated);
             
