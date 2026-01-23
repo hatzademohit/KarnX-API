@@ -35,6 +35,8 @@ class ClientController extends Controller
     {
         try {
             $client = Client::find($id);
+            
+            $client['operating_reginons'] = array_map(fn($id) => (int) $id, explode(',', $client->operating_reginons));
             $regionCities = AirportCities::where(['is_active' => 1, 'country_name' => 'India']) ->select('id','city_name as title','country_name')->get();
             $data['client'] = $client;
             $data['regionCities'] = $regionCities;
@@ -90,7 +92,7 @@ class ClientController extends Controller
     // PUT update client
     public function update(Request $request, $id)
     {
-        
+        return response()->json(['status' => false, 'message' => dd($request->all())], 422);
         try {
             $client = Client::find($id);
             
@@ -124,6 +126,7 @@ class ClientController extends Controller
                 $poilicies = $request->file('terms_conditions_policis')->store('terms_conditions_policis', 'public');
                 $validated['terms_conditions_policis'] = $poilicies;
             }
+            
             $validated['operating_reginons'] = implode(',', array_unique($validated['operating_reginons']));
             $client->update($validated);
             
