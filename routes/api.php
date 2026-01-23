@@ -53,6 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('role', RoleController::class);
     Route::apiResource('user', UserController::class);  
     Route::apiResource('clients', ClientController::class); 
+    Route::post('clients/{id}', [ClientController::class, 'update']);
     Route::apiResource('booking-status', BookingStatusController::class); 
     Route::apiResource('assets', AssetController::class);
 

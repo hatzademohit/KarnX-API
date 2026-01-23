@@ -92,7 +92,7 @@ class ClientController extends Controller
     // PUT update client
     public function update(Request $request, $id)
     {
-        return response()->json(['status' => false, 'message' => dd($request->all())], 422);
+        
         try {
             $client = Client::find($id);
             
@@ -121,10 +121,11 @@ class ClientController extends Controller
                 'specialties' => 'nullable|string|max:255',
                 'is_active' => 'boolean'
             ]);
-
-            if ($request->hasFile('terms_conditions_policis')) {
-                $poilicies = $request->file('terms_conditions_policis')->store('terms_conditions_policis', 'public');
-                $validated['terms_conditions_policis'] = $poilicies;
+            
+            if ($request->hasFile('terms_condisions_policies')) {
+                
+                $poilicies = $request->file('terms_condisions_policies')->store('terms_condisions_policies', 'public');
+                $validated['terms_condisions_policies'] = $poilicies;
             }
             
             $validated['operating_reginons'] = implode(',', array_unique($validated['operating_reginons']));
