@@ -122,9 +122,9 @@ class ClientController extends Controller
             ]);            
            
 
-            if ($request->hasFile('terms_conditions_policies')) {                
-                $poilicies = $request->file('terms_conditions_policies')->store('terms_condisions_policies', 'public');
-                $validated['terms_conditions_policies'] = $poilicies;
+            if ($request->hasFile('terms_conditions_policies')) {
+    		    $policiesPath = $request->file('terms_conditions_policies')->store('terms_conditions_policies', 'public');
+                $validated['terms_conditions_policies'] = $policiesPath;
             }
             
             $validated['operating_reginons'] = $validated['operating_reginons'];
