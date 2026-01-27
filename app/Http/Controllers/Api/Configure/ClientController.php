@@ -100,7 +100,6 @@ class ClientController extends Controller
                 return response()->json(['message' => 'Client not found'], 404);
             }
             
-            
             $validated = $request->validate([
                 'name' => 'sometimes|string|max:100',
                 'type' => 'sometimes|string',
@@ -116,20 +115,20 @@ class ClientController extends Controller
                 'country' => 'nullable|string|max:100',
                 'website' => 'nullable|string|max:255',
                 'safety_ratings' => 'nullable|string|max:255',
-                'operating_reginons' => 'nullable|array|max:255',
+                'operating_reginons' => 'nullable|string|max:255',
                 'certifications' => 'nullable|string|max:255',
                 'specialties' => 'nullable|string|max:255',
                 'is_active' => 'boolean'
-            ]);
-            
-            if ($request->hasFile('terms_condisions_policies')) {
-                
-                $poilicies = $request->file('terms_condisions_policies')->store('terms_condisions_policies', 'public');
-                $validated['terms_condisions_policies'] = $poilicies;
+            ]);            
+           
+
+            if ($request->hasFile('terms_conditions_policies')) {                
+                $poilicies = $request->file('terms_conditions_policies')->store('terms_condisions_policies', 'public');
+                $validated['terms_conditions_policies'] = $poilicies;
             }
             
-            $validated['operating_reginons'] = implode(',', array_unique($validated['operating_reginons']));
-            $client->update($validated);
+            $validated['operating_reginons'] = $validated['operating_reginons'];
+            $client->update($validated); 
             
             return response()->json(['status' => true, 'message' => 'Client updated successfully', 'data' => $client], 200);
         } catch (\Throwable $th) {
